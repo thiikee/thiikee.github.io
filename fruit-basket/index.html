@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" href="/css/bootstrap/4.4.1/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/font-awesome/5.15.4/all.min.css">
+    <link rel="stylesheet" href="/css/bricklayer/0.4.2/bricklayer.min.css">
+    <link rel="stylesheet" href="/css/select-pure/select-pure.css">
+    <link rel="stylesheet" href="index.css">
+    <title>Assorted Fruits</title>
+  </head>
+  <body>
+    <div id="authenticated-area">
+      <header class="pos-f-t">
+        <nav class="navbar navbar-dark bg-dark p-0">
+          <button id="fb-humburger-button" class="navbar-toggler" type="button" data-toggle="collapse" data-target="#fb-menu" disabled>
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <h5 class="text-white mt-2 ml-2">Assorted Fruits 🍑🍎🍊</h5>
+          <div class="ml-auto">
+            <button id="sign-in-button" type="button" class="btn btn-sm btn-outline-secondary text-white mr-1">Sign In</button>
+          </div>
+        </nav>
+        <div id="fb-menu" class="collapse">
+          <div class="bg-dark p-2">
+            <div class="float-none">
+              <nav class="navbar navbar-dark p-1">
+                <ul class="navbar-nav w-100">
+                  <li class="nav-item">
+                    <div class="row w-100">
+                      <div class="col-2 text-right text-white">Title</div>
+                      <div class="col-10">
+                        <input id="fb-search-title" class="form-control fb-search">
+                      </div>
+                    </div>
+                    <div class="row w-100 mt-2">
+                      <div class="col-2 text-right text-white">Type</div>
+                      <div class="col-3">
+                        <select id="fb-search-type" class="form-control fb-search">
+                        </select>
+                      </div>
+                      <div class="col-2 text-right text-white pt-1">Album</div>
+                      <div class="col-4">
+                          <select id="fb-search-album" class="form-control w-75 fb-search">
+                          </select>
+                      </div>
+                      <div class="col-1 text-white">
+                          <input type="hidden" id="fb-search-love">
+                          <i id="fb-search-heart" class="fas fa-heart ml-2 mr-2"></i>
+                      </div>
+                    </div>
+                    <div class="row w-100 mt-2">
+                      <div class="col-2 text-right text-white">Women</div>
+                      <div class="col-10">
+                        <span id="fb-post-women-search" class="h-25 w-100"></span>
+                        <script>var womenSelectSearch;</script>
+                      </div>
+                    </div>
+                    <div class="row w-100 mt-2">
+                      <div class="col-2 text-right text-white">Artists</div>
+                      <div class="col-10">
+                        <span id="fb-post-artists-search" class="h-25 w-100"></span>
+                        <script>var artistsSelectSearch;</script>
+                      </div>
+                    </div>
+                    <div class="row w-100 mt-2">
+                      <div class="col-2 text-right text-white">Tags</div>
+                      <div class="col-10">
+                        <span id="fb-post-tags-search" class="h-25 w-100"></span>
+                        <script>var tagsSelectSearch;</script>
+                      </div>
+                    </div>
+                    <div class="row w-100 mt-2">
+                      <div class="col-2 text-right text-white">Status</div>
+                      <div class="col-10">
+                        <input id="fb-search-include-keeping" type="checkbox" class="ml-4" checked>
+                        <label class="text-white ml-1">Keeping</label>
+                        <input id="fb-search-include-discarded" type="checkbox" class="ml-4">
+                        <label class="text-white ml-1">Discarded</label>
+                      </div>
+                    </div>
+                  </li>
+                  <li class="nav-item">
+                    <input id="fb-search-limit" class="custom-range" type="range" min="0" max="200" step="5" value="25">
+                  </li>
+                  <li class="nav-item">
+                    <div class="form-row">
+                      <div class="col-auto">
+                        <div class="form-check form-check-inline mt-1">
+                          <input class="form-check-input fb-order-by" type="radio" name="fb-search-order-by" value="createdAt">
+                          <label class="form-check-label text-white">Created at</label>
+                        </div>
+                        <div class="form-check form-check-inline mt-1">
+                          <input class="form-check-input fb-order-by" type="radio" name="fb-search-order-by" value="updatedAt" checked>
+                          <label class="form-check-label text-white">Updated at</label>
+                        </div>
+                        <div class="form-check form-check-inline mt-1">
+                          <input class="form-check-input" id="fb-search-ascending" type="checkbox">
+                          <label class="form-check-label text-white">Ascending</label>
+                        </div>
+                    </div>
+                      <div class="col-auto">
+                        <div class="form-inline mr-0">
+                          <button id="fb-search-posts-button" type="button" class="btn btn-sm btn-outline-secondary text-white">Search</button>
+                          <button id="fb-clear-posts-button" type="button" class="btn btn-sm btn-outline-secondary text-white ml-2">Clear</button>
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                </ul>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </header>
+  
+      <main id="main-area" role="main" class="d-none">
+        <div class="py-2 bg-light">
+          <button id="fb-add-post-button" type="button" class="btn btn-sm btn-outline-secondary ml-2" value="">Add</button>
+        </div>
+        <div id="search-result" class="bricklayer"></div>
+        <div class="py-2 bg-light">
+          <button id="fb-read-next-button" type="button" class="btn btn-sm btn-outline-secondary ml-2 d-none">Next</button>
+        </div>
+        <div id="info-msg-area" class="alert-info alert-dismissible text-center"></div>
+        <div id="error-msg-area" class="alert-danger alert-dismissible text-center"></div>
+      </main>
+    </div>
+
+    <!-- Card-->
+    <div id="fb-card-template" class="card box-shadow mb-3 d-none fb-post">
+      <div id="fb-carousel" class="carousel slide lazy fb-post-carousel" data-interval="false" data-ride="false">
+        <div class="carousel-inner">
+          <div class="fb-post-carousel-items">
+            <div class="carousel-item fb-post-carousel-item">
+              <img class="d-block w-100 lazy fb-post-image" referrerpolicy="no-referrer">
+              <span class="fb-post-url d-none"></span>
+            </div>
+          </div>
+          <a class="carousel-control-prev fb-post-carousel-control" role="button" data-slide="prev">
+            <span class="carousel-control-prev-icon"></span>
+            <span class="sr-only">Previous</span>
+          </a>
+          <a class="carousel-control-next fb-post-carousel-control" role="button" data-slide="next">
+            <span class="carousel-control-next-icon"></span>
+            <span class="sr-only">Next</span>
+          </a>
+        </div>
+      </div>
+      <div class="card-body p-2">
+        <div>
+          <h5 class="card-title fb-post-title d-inline"></h5>
+          <i class="fa-heart pull-right fb-post-love"></i></span>
+          <pre style="white-space: pre-wrap"><div class="fb-post-comment"></div></pre>
+          <div class="fb-post-albums">
+            <span class="badge mr-1 fb-post-album"></span>
+          </div>
+          <div class="fb-post-women">
+            <span class="badge mr-1 fb-post-woman"></span>
+          </div>
+          <div class="fb-post-artists">
+            <span class="badge mr-1 fb-post-artist"></span>
+          </div>
+          <div class="fb-post-tags">
+            <span class="badge mr-1 fb-post-tag"></span>
+          </div>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mt-2">
+          <div class="btn-group">
+            <button type="button" class="btn btn-sm btn-outline-secondary pt-0 mr-1 fb-view-post-button">View</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary pt-0 mr-1 fb-edit-post-button">Edit</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary pt-0 fb-copy-post-button">Copy</button>
+            <div class="fb-movies btn-group ml-2 pt-1">
+            </div>
+          </div>
+          <div class="btn-group dropup">
+            <button type="button" class="btn btn-sm btn-outline-secondary pt-0 dropdown-toggle" data-toggle="dropdown">Search</button>
+            <div class="dropdown-menu">
+              <a class="dropdown-item fb-google-title" href="javascript:void(0);">Google</a>
+              <a class="dropdown-item fb-nyaa" href="javascript:void(0);">Nyaa</a>
+            </div>
+          </div>
+          <div>
+            <!--
+            <i class="fa fa-eraser text-muted mr-2 fb-reset"></i>
+            -->
+            <i class="fb-set-opacity fa fa-eye text-muted mr-1"></i>
+            <i class="fb-back-to-top fa fa-arrow-up text-muted mr-1"></i>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer text-muted small fb-card-footer">
+        <div>
+          <span class="fb-post-type"></span>
+          <span>&#x00D7;</span>
+          <span class="fb-post-url-count"></span>
+        </div>
+        <div><span>Created at: </span><span class="fb-post-created-at"></span></div>
+        <div class="fb-post-id"></div>
+        <div class="fb-post-alt"></div>
+        <div class="fb-post-cover d-none"></div>
+      </div>
+    </div>
+
+    <!-- Settings Dialog -->
+    <div class="modal" id="fb-settings-dialog" tabindex="-1" role="dialog">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Settings</h5>
+            <button type="button" class="close fb-close-dialog">
+              <span>&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form class="needs-validation" novalidate>
+              <div class="form-group">
+                <label class="col-form-label">Code</label>
+                <input id="fb-dropbox-code" class="form-control">
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button id="fb-save-settings-button" type="button" class="btn btn-primary fb-close-dialog">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Dialog -->
+    <div class="modal" id="editDialog" tabindex="-1" role="dialog" data-backdrop="static">
+      <div class="modal-dialog modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 id="editModalTitle" class="modal-title">Edit</h5>
+            <button type="button" class="close fb-close-dialog">
+              <span>&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="editForm" class="needs-validation" novalidate>
+              <input id="fb-post-id" type="hidden">
+              <!-- Title -->
+              <div class="form-group">
+                <label class="col-form-label fb-form-label">Title</label>
+                <div class="input-group">
+                  <input id="fb-post-title" class="form-control" required>
+                </div>
+              </div>
+              <!-- Image -->
+              <div class="form-group">
+                <div class="form-inline">
+                  <label class="col-form-label fb-form-label">Images</label>
+                  <a href="#fb-edit-dialog-footer" class="pt-2 mr-2 ml-auto"><i class="fa fa-arrow-down"></i></a>
+                  <button type="button" id="fb-add-images-button" class="fb-plus-button pt-2" value="">
+                    <!--<i class="fab fa-dropbox mr-2"></i>-->
+                    <i class="fab fa-google-drive mr-1 fb-select-google-folder"></i>
+                  </button>
+                </div>
+                <div id="fb-post-urls" class="form-group mb-0">
+                  <table class="w-100 mb-1 fb-image-table">
+                    <tbody>
+                      <tr>
+                        <td class="align-top">
+                          <img class="w-100 fb-post-url fb-set-opacity" referrerpolicy="no-referrer">
+                        </td>
+                        <td class="align-top pl-1 w-25">
+                          <table class="w-100">
+                            <tbody>
+                              <tr>
+                                <td colspan="2">
+                                  <button type="button" class="form-control fb-view-url-button">
+                                    <i class="fas fa-image"></i>
+                                  </button>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td>
+                                  <button type="button" class="form-control fb-copy-url-button">
+                                    <i class="fas fa-copy"></i>
+                                  </button>
+                                </td>
+                                <td>
+                                  <button type="button" class="form-control fb-paste-url-button">
+                                    <i class="fas fa-paste"></i>
+                                  </button>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td>
+                                  <button type="button" class="form-control fb-up-url-button">
+                                    <i class="fa fa-arrow-up"></i>
+                                  </button>
+                                </td>
+                                <td>
+                                  <button type="button" class="form-control fb-down-url-button">
+                                    <i class="fa fa-arrow-down"></i>
+                                  </button>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td colspan="2">
+                                  <button type="button" class="form-control fb-delete-url-button">
+                                      <i class="fa fa-times"></i>
+                                  </button>
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <button type="button" id="fb-add-url-button" class="fb-plus-button pt-2" value="">&#x2295;</button>
+              </div>
+              <!-- Types -->
+              <div class="form-group fb-post-types mb-0">
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="fb-post-type" value="video" required>
+                  <label class="form-check-label fb-post-type">video</label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="fb-post-type" value="photo" required>
+                  <label class="form-check-label fb-post-type">photo</label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="fb-post-type" value="comic" required>
+                  <label class="form-check-label fb-post-type">comic</label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="fb-post-type" value="illus" required>
+                  <label class="form-check-label fb-post-type">illus</label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="fb-post-type" value="mag" required>
+                  <label class="form-check-label fb-post-type">mag</label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="fb-post-type" value="GIF" required>
+                  <label class="form-check-label fb-post-type">GIF</label>
+                </div>
+              </div>
+              <!-- Video URL -->
+              <!--
+              <div class="form-group">
+                <label class="col-form-label fb-form-label">URL</label>
+                <input id="fb-post-video-url" class="form-control">
+              </div>
+              -->
+              <!-- Love -->
+              <div>
+                <input type="hidden" id="fb-post-love">
+                <i id="fb-post-heart" class="far fa-heart"></i> Love
+              </div>
+              <!-- Albums -->
+              <div class="form-inline">
+                <label class="col-form-label fb-form-label">Albums</label>
+                <button type="button" id="fb-add-album-button" class="fb-plus-button pt-2">&#x2295;</button>
+              </div>
+              <span id="fb-post-albums" class="h-25"></span>
+              <script>var albumsSelectEdit;</script>
+              <!-- Women -->
+              <div class="form-inline">
+                <label class="col-form-label fb-form-label">Women</label>
+                <button type="button" id="fb-add-woman-button" class="fb-plus-button pt-2">&#x2295;</button>
+              </div>
+              <span id="fb-post-women" class="h-25"></span>
+              <script>var womenSelectEdit;</script>
+              <!-- artists -->
+              <div class="form-inline">
+                <label class="col-form-label fb-form-label">Artists</label>
+                <button type="button" id="fb-add-artist-button" class="fb-plus-button pt-2">&#x2295;</button>
+              </div>
+              <span id="fb-post-artists" class="h-25"></span>
+              <script>var artistsSelectEdit;</script>
+              <!-- Tags -->
+              <div class="form-inline">
+                <label class="col-form-label fb-form-label">Tags</label>
+                <button type="button" id="fb-add-tag-button" class="fb-plus-button pt-2">&#x2295;</button>
+                <button type="button" id="fb-nyaa-button" class="btn btn-link fb-nyaa-button pt-2 pb-0 ml-auto">Nyaa</button>
+              </div>
+              <span id="fb-post-tags" class="h-25"></span>
+              <script>var tagsSelectEdit;</script>
+              <div id="fb-post-individual-area" class="form-check form-check-inline mt-2">
+                <input id="fb-post-individual" type="checkbox" class="form-check-input" value="individual">
+                <label class="form-check-label">Individual</label>
+              </div>
+              <!-- Comment -->
+              <div class="form-group fb-post-comment">
+                <label class="col-form-label fb-form-label">Comment</label>
+                <textarea id="fb-post-comment" class="form-control"></textarea>
+              </div>
+              <!-- Discarded -->
+              <div>
+                <div class="row">
+                  <div class="col-2">
+                    <label class="col-form-label fb-form-label">Cover</label>
+                  </div>
+                  <div class="col-4">
+                    <input class="form-control" id="fb-post-cover">
+                  </div>
+                  <div class="col-6">
+                    <input type="checkbox" id="fb-post-discarded" value="1">
+                    <label class="col-form-label fb-form-label">Discarded</label>
+                  </div>
+                </div>
+              </div>
+              <!-- Alt -->
+              <div class="form-group fb-post-alt">
+                <label class="col-form-label fb-form-label">Alt</label>
+                <input id="fb-post-alt" class="form-control">
+              </div>
+              <div class="form-group fb-post-created-at" id="fb-post-created-at-picker">
+                <label class="col-form-label fb-form-label">Created</label>
+                <input id="fb-post-created-at" class="form-control">
+              </div>
+            </form>
+          </div>
+          <div id="fb-edit-dialog-footer" class="modal-footer">
+            <button id="fb-delete-post-button" type="button" class="btn btn-danger mr-auto">Delete</button>
+            <button type="button" class="btn btn-secondary fb-close-dialog">Cancel</button>
+            <button id="fb-save-post-button" type="button" class="btn btn-primary">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Drive Dialog -->
+    <div class="modal" id="fb-dropbox-dialog" tabindex="-1" role="dialog" data-backdrop="static">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Drive</h5>
+            <button type="button" class="close fb-close-dialog">
+              <span>&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div id="fb-dropbox">
+              <input id="fb-dropbox-title" type="hidden">
+              <div class="form-check form-check-inline">
+                <input id="fb-toggle-all-images-select" type="checkbox" class="form-check-input">
+                <label class="form-check-label">Select All</label>
+              </div>
+              <a href="#fb-dropbox-dialog-footer" class="pt-2 mr-2 ml-auto"><i class="fa fa-arrow-down"></i></a>
+              <div class="card mb-2">
+                <button type="button" class="btn btn-outline-info btn-block fb-select-google-folder" value="">/</button>
+              </div>
+              <div id="fb-dropbox-images">
+                <div class="card mb-2">
+                  <div class="form-check form-check-inline">
+                    <input name="fb-dropbox-image" type="checkbox" class="form-check-input">
+                    <label class="form-check-label fb-dropbox-image"></label>
+                  </div>
+                  <img class="card-img-bottom fb-set-opacity" referrerpolicy="no-referrer">
+                </div>
+              </div>
+            </div>
+          </div>
+          <div id="fb-dropbox-dialog-footer" class="modal-footer">
+            <button type="button" class="btn btn-secondary fb-close-dialog">Cancel</button>
+            <button id="fb-select-images-button" type="button" class="btn btn-primary">Select</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Album Dialog -->
+    <div class="modal fade" id="fb-album-dialog" tabindex="-1" role="dialog">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Album</h5>
+            <button type="button" class="close fb-close-dialog">
+              <span>&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="fb-album-form" class="needs-validation" novalidate>
+              <div class="form-group mb-1">
+                <label class="col-form-label fb-form-label">Name</label>
+                <input id="fb-album-name" class="form-control" required>
+                <div class="invalid-feedback">Name is required.</div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary fb-close-dialog">Cancel</button>
+            <button id="fb-save-album-button" type="button" class="btn btn-primary">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Woman Dialog -->
+    <div class="modal fade" id="fb-woman-dialog" tabindex="-1" role="dialog">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Woman</h5>
+            <button type="button" class="close fb-close-dialog">
+              <span>&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="fb-woman-form" class="needs-validation" novalidate>
+              <div class="form-group mb-1">
+                <label class="col-form-label fb-form-label">Name</label>
+                <input id="fb-woman-name" class="form-control" required>
+                <div class="invalid-feedback">Name is required.</div>
+              </div>
+              <div class="form-group mb-1">
+                <label class="col-form-label fb-form-label">Phonetic Name</label>
+                <input id="fb-woman-phonetic-name" class="form-control" required>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary fb-close-dialog">Cancel</button>
+            <button id="fb-save-woman-button" type="button" class="btn btn-primary">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Artist Dialog -->
+    <div class="modal fade" id="fb-artist-dialog" tabindex="-1" role="dialog">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Artist</h5>
+            <button type="button" class="close fb-close-dialog">
+              <span>&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="fb-artist-form" class="needs-validation" novalidate>
+              <div class="form-group mb-1">
+                <label class="col-form-label fb-form-label">Name</label>
+                <input id="fb-artist-name" class="form-control" required>
+                <div class="invalid-feedback">Name is required.</div>
+              </div>
+              <div class="form-group mb-1">
+                <label class="col-form-label fb-form-label">Phonetic Name</label>
+                <input id="fb-artist-phonetic-name" class="form-control" required>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary fb-close-dialog">Cancel</button>
+            <button id="fb-save-artist-button" type="button" class="btn btn-primary">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tag Dialog -->
+    <div class="modal fade" id="fb-tag-dialog" tabindex="-1" role="dialog">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Tag</h5>
+            <button type="button" class="close fb-close-dialog">
+              <span>&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="fb-tag-form" class="needs-validation" novalidate>
+              <div class="form-group mb-1">
+                <label class="col-form-label fb-form-label">Name</label>
+                <input id="fb-tag-name" class="form-control" required>
+                <div class="invalid-feedback">Name is required.</div>
+              </div>
+              <div class="form-group mb-1">
+                <label class="col-form-label fb-form-label">Phonetic Name</label>
+                <input id="fb-tag-phonetic-name" class="form-control" required>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary fb-close-dialog">Cancel</button>
+            <button id="fb-save-tag-button" type="button" class="btn btn-primary">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="firebaseui-auth-container"></div>
+    <script src="/js/jquery/jquery-3.4.1.min.js"></script>
+    <script src="/js/jquery.lazyload/1.9.1/jquery.lazyload.min.js"></script>
+    <script src="/js/popper.js/1.12.9/popper.min.js"></script>
+    <script src="/js/bootstrap/4.4.1/bootstrap.min.js"></script>
+    <script src="/js/bricklayer/0.4.2/bricklayer.min.js"></script>
+    <script src="/js/select-pure/0.5.0/bundle.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.13.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/ui/6.0.1/firebase-ui-auth.js"></script>
+
+    <!-- msal.min.js can be used in the place of msal.js; included msal.js to make debug easy -->
+    <script src="https://alcdn.msauth.net/browser/2.30.0/js/msal-browser.js"
+      integrity="sha384-o4ufwq3oKqc7IoCcR08YtZXmgOljhTggRwxP2CLbSqeXGtitAxwYaUln/05nJjit"
+      crossorigin="anonymous"></script>
+
+    <!-- importing app scripts (load order is important) -->
+    <script type="module" src="./authConfig.js"></script>
+    <script type="text/javascript" src="./graphConfig.js"></script>
+    <script type="module" src="./ui.js"></script>
+
+    <!-- <script type="text/javascript" src="./authRedirect.js"></script>   -->
+    <!-- uncomment the above line and comment the line below if you would like to use the redirect flow -->
+    <script type="module" src="./authPopup.js"></script>
+    <script type="text/javascript" src="./graph.js"></script>
+
+    <script type="module" src="./index.js"></script>
+  </body>
+</html>

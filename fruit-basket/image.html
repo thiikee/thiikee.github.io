@@ -1,0 +1,12 @@
+<html>
+  <body>
+    <img id="image">
+  </body>
+  <script src="/js/jquery/jquery-3.4.1.min.js"></script>
+  <script>
+$(() => {
+    console.log(window.location.search);
+    $('#image').attr('src', window.location.search.slice(5));
+});
+  </script>
+</html>
