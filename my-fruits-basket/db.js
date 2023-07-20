@@ -1,6 +1,6 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js'
 import { getAuth, signInWithPopup, OAuthProvider, setPersistence, browserSessionPersistence, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js'
-import { getFirestore, collection, query, where, orderBy, getDocs, doc, addDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js'
+import { getFirestore, collection, query, where, orderBy, getDocs, doc, addDoc, setDoc, serverTimestamp, limit, startAfter } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js'
 import { setAlbums } from './albums.js';
 import { setArtists } from './artists.js';
 import { setTags } from './tags.js';
@@ -18,6 +18,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
+var lastVisible;
 
 function signInDatabase() {
   onAuthStateChanged(auth, (user) => {
@@ -59,8 +60,11 @@ function signInDatabase() {
   });
 }
 
-async function getPosts(criteria, lastVisible, callback) {
+async function getPosts(criteria, lastVisibleCount, callback) {
   //console.log(criteria);
+  if (lastVisibleCount == 0) {
+    lastVisible = undefined;
+  }
   var q = query(collection(db, 'posts'));
   if (criteria.title.length > 0) {
     q = query(q, orderBy('title'));
@@ -100,8 +104,14 @@ async function getPosts(criteria, lastVisible, callback) {
     //console.log(criteria.tags);
     q = query(q, where('tags', 'array-contains-any', criteria.tags));
   }
+  if (lastVisible) {
+    q = query(q, startAfter(lastVisible), limit(criteria.limit));
+  } else {
+    q = query(q, limit(criteria.limit));
+  }
   //console.log(q);
   var snapshot = await getDocs(q);
+  lastVisible = snapshot.docs[snapshot.docs.length - 1];
   //console.log(snapshot);
   callback(snapshot.docs.map((p) => {
     //console.log(p.data());
@@ -204,7 +214,7 @@ async function savePost(post) {
   };
   if (!post.id) {
     var docRef = await addDoc(collection(db, 'posts'), data);
-    console.log(docRef.id);
+    //console.log(docRef.id);
     post.id = docRef.id;
     return new Promise((resolve, reject) => {
       resolve(post)

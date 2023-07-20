@@ -384,10 +384,6 @@
               </div>
               <span id="fb-post-tags" class="h-25"></span>
               <script>var tagsSelectEdit;</script>
-              <div id="fb-post-individual-area" class="form-check form-check-inline mt-2">
-                <input id="fb-post-individual" type="checkbox" class="form-check-input" value="individual">
-                <label class="form-check-label">Individual</label>
-              </div>
               <!-- Comment -->
               <div class="form-group fb-post-comment">
                 <label class="col-form-label fb-form-label">Comment</label>
@@ -400,7 +396,7 @@
                     <label class="col-form-label fb-form-label">Cover</label>
                   </div>
                   <div class="col-4">
-                    <input class="form-control" id="fb-post-cover">
+                    <input type="number" class="form-control" id="fb-post-cover">
                   </div>
                   <div class="col-6">
                     <input type="checkbox" id="fb-post-discarded" value="1">
@@ -420,6 +416,10 @@
             </form>
           </div>
           <div id="fb-edit-dialog-footer" class="modal-footer">
+            <div id="fb-post-individual-area" class="form-check form-check-inline mt-2">
+              <input id="fb-post-individual" type="checkbox" class="form-check-input" value="individual">
+              <label class="form-check-label">Individual</label>
+            </div>
             <button id="fb-delete-post-button" type="button" class="btn btn-danger mr-auto">Delete</button>
             <button type="button" class="btn btn-secondary fb-close-dialog">Cancel</button>
             <button id="fb-save-post-button" type="button" class="btn btn-primary">Save</button>

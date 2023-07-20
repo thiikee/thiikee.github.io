@@ -35,6 +35,7 @@ function setupCriteria() {
 }
 
 function getSearchCriteria() {
+  //console.log(parseInt($searchLimit.val()));
   return {
     love: $love.val(),
     title: $title.val(),

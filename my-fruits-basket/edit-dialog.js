@@ -53,10 +53,8 @@ function openEditDialog(post) {
   $postUrls.empty();
   post.images.forEach((i) => {
     var postUrl = $.parseHTML(urlTemplate);
-    if (i.url.indexOf('dropbox') < 0) {
-      $(postUrl).find('.fb-post-url').attr('data-image-id', i.id);
-      $(postUrl).find('.fb-post-url').attr('src', i.url);
-    }
+    $(postUrl).find('.fb-post-url').attr('data-image-id', i.id);
+    $(postUrl).find('.fb-post-url').attr('src', i.url);
     $postUrls.append(postUrl);
   });
   // Title
@@ -105,10 +103,12 @@ function saveButtonClick(event) {
         updateSearchResult(res);
       });
     } else {
-      post.images.forEach((u) => {
+      post.imageIds.forEach((u, i) => {
         var p = post;
         p.id = undefined;
-        p.images = [u];
+        p.title = p.imageTitles[i];
+        p.imageIds = [u];
+        p.images = [];
         savePost(p).then((res) => {
           updateSearchResult(res);
         });
@@ -146,6 +146,7 @@ function pickPost(event) {
     title: $('#fb-post-title').val(),
     type: dialog.find('input[name="fb-post-type"]:checked').val(),
     imageIds: dialog.find('.fb-post-url').get().map((u) => $(u).attr('data-image-id')).filter((u) => u.length > 0),
+    imageTitles: dialog.find('.fb-post-url').get().map((u) => $(u).attr('data-image-title')),
     images: dialog.find('.fb-post-url').get().map((u) => $(u).attr('src')).filter((u) => u.length > 0),
     videoUrl: dialog.find('.fb-movie').get().map((u) => $(u).attr('href')).filter((u) => u.length > 0),
     love: $('#fb-post-love').val() == 'love',
@@ -208,6 +209,7 @@ function selectGoogleFolder(event) {
           $img.attr('src', directUrl);
           $img.attr('alt', item.lastModifiedDateTime);
           $img.attr('data-image-id', item.id);
+          $img.attr('data-image-title', item.name.replace(/\.[^/.]+$/, ''));
         }
       }
     })
@@ -219,9 +221,11 @@ function selectGoogleFolder(event) {
 function selectDropboxImages() {
   $dropboxDialog.find('input[name="fb-dropbox-image"]:checked').get().forEach((e, i, a) => {
     var postUrl = $.parseHTML(urlTemplate);
-    var imageId = $(e).closest('.card').find('img').data('image-id');
+    var imageId = $(e).closest('.card').find('img').attr('data-image-id');
+    var imageTitle = $(e).closest('.card').find('img').attr('data-image-title');
     var url = $(e).closest('.card').find('img').attr('src');
     $(postUrl).find('.fb-post-url').attr('data-image-id', imageId);
+    $(postUrl).find('.fb-post-url').attr('data-image-title', imageTitle);
     $(postUrl).find('.fb-post-url').attr('src', url);
     if (i === 0) {
       if ($('#fb-post-title').val().length === 0) {
