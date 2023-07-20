@@ -2,5 +2,6 @@
 const graphConfig = {
   graphMeEndpoint: "https://graph.microsoft.com/v1.0/me",
   graphMailEndpoint: "https://graph.microsoft.com/v1.0/me/messages",
-  graphOneDriveEndpoint: "https://graph.microsoft.com/v1.0/me/drive/root/children"
+  graphOneDriveEndpoint: "https://graph.microsoft.com/v1.0/drive/root/children",
+  batchEndpoint: 'https://graph.microsoft.com/v1.0/$batch'
 };

@@ -22,7 +22,7 @@ function searchPosts(event) {
   showProgress();
   var criteria = getSearchCriteria();
   getPosts(criteria, lastVisible, (posts) => {
-    console.log(posts);
+    //console.log(posts);
     setSearchResult(posts);
     setOpacity();
     inProgress = false;

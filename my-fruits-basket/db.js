@@ -11,9 +11,9 @@ export { signInDatabase, getPosts, getAllTypes, getAllAlbums, getAllWomen, getAl
 
 const isOnline = true;
 const firebaseConfig = {
-  apiKey: 'AIzaSyDusyt8yl2cHmZXxxrISn-gc8mKqH5WvMc',
-  projectId: 'assorted-fruits',
-  authDomain: "assorted-fruits.firebaseapp.com",
+  apiKey: 'AIzaSyCRFQdEjgM97Yx3z7T94lK-dQ3F5NiAE1c',
+  projectId: 'my-fruits-basket',
+  authDomain: "my-fruits-basket.firebaseapp.com",
 };
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -110,6 +110,7 @@ async function getPosts(criteria, lastVisible, callback) {
       title: p.data().title,
       type: p.data().type,
       images: p.data().images,
+      imageIds: p.data().imageIds,
       cover: p.data().cover,
       albums:p.data().albums,
       women: p.data().women,
@@ -189,6 +190,7 @@ async function savePost(post) {
     title: post.title,
     type: post.type,
     images: post.images,
+    imageIds: post.imageIds,
     cover: post.cover ? parseInt(post.cover) : 0,
     albums: post.albums,
     women: post.women,

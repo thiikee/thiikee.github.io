@@ -1,4 +1,5 @@
 import { openEditDialog } from './edit-dialog.js';
+import { getImage } from './authPopup.js';
 export { createCard };
 
 const $cardTemplate = $('#fb-card-template').prop('outerHTML');
@@ -24,24 +25,58 @@ function createCard(post, callback) {
   var carouselItems = $(card).find('.fb-post-carousel-items');
   var carouselItemTemplate = $(card).find('.fb-post-carousel-item').prop('outerHTML');
   carouselItems.empty();
-  if (post.images) {
+  if (post.imageIds) {
+    post.imageIds.forEach((imageId, i, a) => {
+      //console.log(imageId);
+      var carouselItem = $.parseHTML(carouselItemTemplate);
+      const imageIdReplace = imageId.replace('!', '-');
+      $(carouselItem).attr('id', `carousel-item-${imageIdReplace}`);
+      var $img = $(carouselItem).find('.fb-post-image');
+      $img.attr('id', imageIdReplace);
+      $img.attr('data-image-id', imageId);
+      carouselItems.append($(carouselItem).prop('outerHTML'));
+      getImage(imageId, (r) => {
+        var u = r['@microsoft.graph.downloadUrl'];
+        //console.log(imageId);
+        //console.log(u);
+        $(`#${imageIdReplace}`).attr('data-image-url', u);
+        $(`carousel-item-${imageIdReplace}`).find('.fb-post-url').text(u);
+        if (post.cover < a.length) {
+          if (i == post.cover) {
+            $(`#carousel-item-${imageIdReplace}`).addClass('active');
+            $(`#${imageIdReplace}`).attr('src', u);
+          } else {
+            $(`#${imageIdReplace}`).attr('data-src', u);
+          }
+        } else {
+          if (i == 0) {
+            $(`#carousel-item-${imageIdReplace}`).addClass('active');
+            $(`#${imageIdReplace}`).attr('src', u);
+          } else {
+            $(`#${imageIdReplace}`).attr('data-src', u);
+          }
+        }
+      });
+    });
+  } else if (post.images) {
     carouselItems.append(post.images.map((u, i, a) => {
       var carouselItem = $.parseHTML(carouselItemTemplate);
-      var img = $(carouselItem).find('.fb-post-image');
+      var $img = $(carouselItem).find('.fb-post-image');
+      $img.attr('data-image-url', u);
       $(carouselItem).find('.fb-post-url').text(u);
       if (post.cover < a.length) {
         if (i == post.cover) {
           $(carouselItem).addClass('active');
-          img.attr('src', u);
+          $img.attr('src', u);
         } else {
-          img.attr('data-src', u);
+          $img.attr('data-src', u);
         }
       } else {
         if (i == 0) {
           $(carouselItem).addClass('active');
-          img.attr('src', u);
+          $img.attr('src', u);
         } else {
-          img.attr('data-src', u);
+          $img.attr('data-src', u);
         }
       }
       return $(carouselItem).prop('outerHTML');
@@ -120,7 +155,12 @@ function pickPost(event) {
     id: card.attr('id'),
     title: card.find('.fb-post-title').text(),
     type: card.find('.fb-post-type').text(),
-    images: card.find('.fb-post-url').get().map((i) => $(i).text()),
+    images: card.find('.fb-post-image').get().map((i) => {
+      return {
+        id: $(i).data('image-id'),
+        url: $(i).data('image-url')
+      }
+    }),
     videoUrl: card.find('.fb-view-post-button').attr('data-href'),
     love: card.find('.fb-post-love').css('color') == 'rgb(255, 0, 0)',
     discarded: card.css('background-color') == 'rgb(192, 192, 192)',

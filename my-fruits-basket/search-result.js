@@ -8,7 +8,7 @@ var bricklayer;
 var lastVisible = 0;
 
 function setSearchResult(posts) {
-  console.log(posts);
+  //console.log(posts);
   createBrickLayer();
   if (posts.length === 0) {
     $infoMessageArea .append('No more posts.');

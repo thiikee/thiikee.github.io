@@ -7,7 +7,7 @@ import { openWomanDialog } from './woman-dialog.js';
 import { openArtistDialog } from './artist-dialog.js';
 import { openTagDialog } from './tag-dialog.js';
 import { initForm } from './form.js';
-import { listFolder } from './authPopup.js';
+import { listFolder, getLink } from './authPopup.js';
 export { openEditDialog };
 
 const $editDialog = $('#editDialog');
@@ -53,8 +53,9 @@ function openEditDialog(post) {
   $postUrls.empty();
   post.images.forEach((i) => {
     var postUrl = $.parseHTML(urlTemplate);
-    if (i.indexOf('dropbox') < 0) {
-      $(postUrl).find('.fb-post-url').attr('src', i);
+    if (i.url.indexOf('dropbox') < 0) {
+      $(postUrl).find('.fb-post-url').attr('data-image-id', i.id);
+      $(postUrl).find('.fb-post-url').attr('src', i.url);
     }
     $postUrls.append(postUrl);
   });
@@ -144,6 +145,7 @@ function pickPost(event) {
     individual: $('#fb-post-individual:checked').val(),
     title: $('#fb-post-title').val(),
     type: dialog.find('input[name="fb-post-type"]:checked').val(),
+    imageIds: dialog.find('.fb-post-url').get().map((u) => $(u).attr('data-image-id')).filter((u) => u.length > 0),
     images: dialog.find('.fb-post-url').get().map((u) => $(u).attr('src')).filter((u) => u.length > 0),
     videoUrl: dialog.find('.fb-movie').get().map((u) => $(u).attr('href')).filter((u) => u.length > 0),
     love: $('#fb-post-love').val() == 'love',
@@ -156,6 +158,7 @@ function pickPost(event) {
     alt: $('#fb-post-alt').val(),
     createdAt: $('#fb-post-created-at').val()
   };
+  //console.log(post.imageIds);
   post.discarded = $('#fb-post-discarded:checked').val();
   if (!post.discarded) post.discarded = false;
   var createdAt = $('#fb-post-created-at').val();
@@ -182,29 +185,29 @@ function selectGoogleFolder(event) {
   var folder = $(event.target).val();
   $('#fb-dropbox-title').val($(event.target).text());
   $dropboxImages.empty();
-  console.log(folder);
-  listFolder(folder, (res, endpoint) => {
-    console.log(res.value);
+  //console.log(folder);
+  listFolder(folder, (res) => {
+    //console.log(res.value);
     res.value.forEach((item) => {
       if (item.folder) {
-        console.log(item);
+        //console.log(item);
         $dropboxImages.append(`
         <div class="card mb-2">
           <button type="button" class="btn btn-outline-info btn-block fb-select-google-folder" value="${item.id}">${item.name}</button>
         </div>`)
       } else {
-        console.log(item);
+        //console.log(item);
         if (item.file && item.file.mimeType.match(/image\/.+/i)) {
           var dropboxItem = $.parseHTML(dropboxImageTemplate);
           $dropboxImages.append(dropboxItem);
-          console.log(item.webContentLink);
           var directUrl = item['@microsoft.graph.downloadUrl'];
           //var directUrl = item.thumbnailLink.replace(/=s[0-9]+$/, '=s0');
-          console.log(directUrl);
           $(dropboxItem).find('input[name="fb-dropbox-image"]').attr('value', directUrl);
           $(dropboxItem).find('.fb-dropbox-image').text(item.name.replace(/\.[^/.]+$/, ''));
-          $(dropboxItem).find('img').attr('src', directUrl);
-          $(dropboxItem).find('img').attr('alt', item.lastModifiedDateTime);
+          var $img = $(dropboxItem).find('img');
+          $img.attr('src', directUrl);
+          $img.attr('alt', item.lastModifiedDateTime);
+          $img.attr('data-image-id', item.id);
         }
       }
     })
@@ -216,7 +219,9 @@ function selectGoogleFolder(event) {
 function selectDropboxImages() {
   $dropboxDialog.find('input[name="fb-dropbox-image"]:checked').get().forEach((e, i, a) => {
     var postUrl = $.parseHTML(urlTemplate);
+    var imageId = $(e).closest('.card').find('img').data('image-id');
     var url = $(e).closest('.card').find('img').attr('src');
+    $(postUrl).find('.fb-post-url').attr('data-image-id', imageId);
     $(postUrl).find('.fb-post-url').attr('src', url);
     if (i === 0) {
       if ($('#fb-post-title').val().length === 0) {
@@ -252,13 +257,17 @@ function inputImageUrl(event) {
 function upUrl(event) {
   var src = event.target.closest('.fb-image-table');
   var srcImg = $(src).find('img');
+  var srcImageId = srcImg.attr('data-image-id');
   var srcUrl = srcImg.attr('src');
   var dst = src.previousSibling.previousSibling;
   if (dst) {
     dst = dst.previousSibling;
     var dstImg = $(dst).find('img');
+    var dstImageId = dstImg.attr('data-image-id');
     var dstUrl = dstImg.attr('src');
+    dstImg.attr('data-image-id', srcImageId);
     dstImg.attr('src', srcUrl);
+    srcImg.attr('data-image-id', dstImageId);
     srcImg.attr('src', dstUrl);
   }
 }
@@ -266,13 +275,17 @@ function upUrl(event) {
 function downUrl(event) {
   var src = event.target.closest('.fb-image-table');
   var srcImg = $(src).find('img');
+  var srcImageId = srcImg.attr('data-image-id');
   var srcUrl = srcImg.attr('src');
   var dst = src.nextSibling.nextSibling;
   if (dst) {
     dst = dst.nextSibling;
     var dstImg = $(dst).find('img');
+    var dstImageId = dstImg.attr('data-image-id');
     var dstUrl = dstImg.attr('src');
+    dstImg.attr('data-image-id', srcImageId);
     dstImg.attr('src', srcUrl);
+    srcImg.attr('data-image-id', dstImageId);
     srcImg.attr('src', dstUrl);
   }
 }

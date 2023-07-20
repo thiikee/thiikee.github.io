@@ -1,9 +1,9 @@
-import { msalConfig, loginRequest, driveRequest } from './authConfig.js';
+import { msalConfig, loginRequest, driveRequest, createLinkRequest } from './authConfig.js';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js'
 import { getAuth, signInWithPopup, signInWithRedirect, OAuthProvider, GoogleAuthProvider, setPersistence, browserSessionPersistence, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js'
 import { getFirestore, collection, query, where, orderBy, getDocs, doc, addDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js'
 import { showWelcomeMessage, updateUI } from "./ui.js";
-export { signIn, signOut, seeProfile, readMail, readOneDrive, readFirebase, listFolder };
+export { signIn, signOut, seeProfile, readMail, readOneDrive, readFirebase, listFolder, getImage, getLink };
 
 // Create the main myMSALObj instance
 // configuration parameters are located at authConfig.js
@@ -82,7 +82,7 @@ function getTokenPopup(request) {
      * https://github.com/AzureAD/microsoft-authentication-library-for-js/blob/dev/lib/msal-common/docs/Accounts.md
      */
     request.account = myMSALObj.getAccountByUsername(username);
-    console.log(request);
+    //console.log(request);
     
     return myMSALObj.acquireTokenSilent(request)
         .catch(error => {
@@ -133,12 +133,31 @@ function listFolder(folder, callback) {
   getTokenPopup(driveRequest)
   .then(response => {
       if (folder.length > 0) {
-        callMSGraph(`https://graph.microsoft.com/v1.0/me/drive/items/${folder}/children`, response.accessToken, callback);
+        callMSGraph(`https://graph.microsoft.com/v1.0/drive/items/${folder}/children`, response.accessToken, callback);
       } else {
         callMSGraph(graphConfig.graphOneDriveEndpoint, response.accessToken, callback);
       }
   }).catch(error => {
       console.error(error);
+  });
+}
+
+function getImage(imageId, callback) {
+  getTokenPopup(driveRequest)
+  .then(response => {
+      callMSGraph(`https://graph.microsoft.com/v1.0/drive/items/${imageId}`, response.accessToken, callback);
+  }).catch(error => {
+      console.error(error);
+      throw new Error(error);
+  });
+}
+
+function getLink(endpoints, callback) {
+  getTokenPopup(createLinkRequest)
+  .then(response => {
+    batchMSGraph(endpoints, { 'type': 'embed' }, response.accessToken, callback);
+  }).catch(error => {
+      throw new Error(error);
   });
 }
 

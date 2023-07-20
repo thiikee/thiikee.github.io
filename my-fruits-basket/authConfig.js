@@ -1,4 +1,4 @@
-export { msalConfig, loginRequest, tokenRequest, driveRequest };
+export { msalConfig, loginRequest, tokenRequest, driveRequest, createLinkRequest };
 
 /**
  * Configuration object to be passed to MSAL instance on creation. 
@@ -8,12 +8,12 @@ export { msalConfig, loginRequest, tokenRequest, driveRequest };
 const msalConfig = {
   auth: {
       // 'Application (client) ID' of app registration in Azure portal - this value is a GUID
-      clientId: "789e9b30-4ee4-4f09-beed-2ac992471e3b",
+      clientId: "bf36c6fd-b915-4037-a1f3-8c05cc122f62",
       // Full directory URL, in the form of https://login.microsoftonline.com/<tenant-id>
       //authority: "https://login.microsoftonline.com/1c44a590-a11b-4eaa-b90c-8cbec1dc6fe8",
       authority:"https://login.microsoftonline.com/consumers/",
       // Full redirect URL, in form of http://localhost:3000
-      redirectUri: "http://localhost:3000/fruit-basket/",
+      redirectUri: "http://localhost:3000/my-fruits-basket/",
   },
   cache: {
       cacheLocation: "sessionStorage", // This configures where your cache will be stored
@@ -30,7 +30,7 @@ const msalConfig = {
                       console.error(message);		
                       return;		
                   case msal.LogLevel.Info:		
-                      console.info(message);		
+                      //console.info(message);		
                       return;		
                   case msal.LogLevel.Verbose:		
                       console.debug(message);		
@@ -66,3 +66,8 @@ const tokenRequest = {
 const driveRequest = {
   scopes: ["User.Read", "Files.Read"]
 };
+
+const createLinkRequest = {
+    scopes: ["User.Read", "Files.ReadWrite"]
+  };
+  
