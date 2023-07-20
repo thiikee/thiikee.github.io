@@ -102,6 +102,10 @@ async function getPosts(criteria, lastVisibleCount, callback) {
   }
   else if (criteria.tags && criteria.tags.length > 0) {
     //console.log(criteria.tags);
+    // A maximum of 1 'ARRAY_CONTAINS' filter is allowed per disjunction.
+    //for (var i = 0; i < criteria.tags.length; i++) {
+    //  q = query(q, where('tags', 'array-contains', criteria.tags[i]));
+    //}
     q = query(q, where('tags', 'array-contains-any', criteria.tags));
   }
   if (lastVisible) {

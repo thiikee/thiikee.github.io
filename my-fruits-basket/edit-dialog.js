@@ -145,7 +145,7 @@ function pickPost(event) {
     individual: $('#fb-post-individual:checked').val(),
     title: $('#fb-post-title').val(),
     type: dialog.find('input[name="fb-post-type"]:checked').val(),
-    imageIds: dialog.find('.fb-post-url').get().map((u) => $(u).attr('data-image-id')).filter((u) => u.length > 0),
+    imageIds: dialog.find('.fb-post-url').get().map((u) => $(u).attr('data-image-id')),
     imageTitles: dialog.find('.fb-post-url').get().map((u) => $(u).attr('data-image-title')),
     images: dialog.find('.fb-post-url').get().map((u) => $(u).attr('src')).filter((u) => u.length > 0),
     videoUrl: dialog.find('.fb-movie').get().map((u) => $(u).attr('href')).filter((u) => u.length > 0),
