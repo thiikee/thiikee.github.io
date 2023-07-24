@@ -23,9 +23,9 @@ var lastVisible;
 function signInDatabase() {
   onAuthStateChanged(auth, (user) => {
     if (!user) {
-      setPersistence(auth, browserSessionPersistence)
-      .then(() => {
-        if (!user) {
+      //setPersistence(auth, browserSessionPersistence)
+      //.then(() => {
+      //  if (!user) {
           const provider = new OAuthProvider('microsoft.com');
           signInWithPopup(auth, provider)
           .then((result) => {
@@ -47,8 +47,8 @@ function signInDatabase() {
             // The email of the user's account used.
             const email = error.customData.email;
           });
-        }
-      });
+      //  }
+      //});
     } else {
       setTypes(getAllTypes());
       setAlbums(getAllAlbums());
