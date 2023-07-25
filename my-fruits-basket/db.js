@@ -217,16 +217,26 @@ async function savePost(post) {
     discarded: post.discarded ? true : false
   };
   if (!post.id) {
-    var docRef = await addDoc(collection(db, 'posts'), data);
-    //console.log(docRef.id);
-    post.id = docRef.id;
     return new Promise((resolve, reject) => {
-      resolve(post)
+      addDoc(collection(db, 'posts'), data)
+        .then((docRef) => {
+          //console.log(docRef.id);
+          post.id = docRef.id;
+          resolve(post)
+        })
+        .catch((error) => {
+          reject(error);
+        });
     });
   } else {
-    var docRef = await setDoc(doc(db, "posts", post.id), data);
     return new Promise((resolve, reject) => {
-      resolve(post)
+      setDoc(doc(db, "posts", post.id), data)
+        .then((docRef) => {
+          resolve(post);
+        })
+        .catch((error) => {
+          reject(error);
+        });
     });
   }
 }

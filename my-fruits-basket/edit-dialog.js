@@ -99,9 +99,12 @@ function saveButtonClick(event) {
     if (!confirm('OK ?')) return;
     var post = pickPost(event);
     if (!post.individual) {
-      savePost(post).then((res) => {
-        updateSearchResult(res);
-      });
+      savePost(post)
+        .then((res) => {
+          updateSearchResult(res);
+        }, (error) => {
+          alert(error);
+        });
     } else {
       post.imageIds.forEach((u, i) => {
         var p = post;
@@ -109,9 +112,12 @@ function saveButtonClick(event) {
         p.title = p.imageTitles[i];
         p.imageIds = [u];
         p.images = [];
-        savePost(p).then((res) => {
-          updateSearchResult(res);
-        });
+        savePost(p)
+          .then((res) => {
+            updateSearchResult(res);
+          }, (error) => {
+            alert(error);
+          });
       });
     }
     $editDialog.modal('hide');
