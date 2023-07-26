@@ -56,6 +56,7 @@ img.firebaseui-idp-icon {
   line-height: 1;
 }
 
+/* dynamic column count not work on iPad
 @media (max-width: 992px) {
   .card-columns {
     column-count: 2;
@@ -66,7 +67,7 @@ img.firebaseui-idp-icon {
   .card-columns {
     column-count: 1;
   }
-}
+}*/
 
 @media screen and (min-width: 993px) {
   .bricklayer-column-sizer {
