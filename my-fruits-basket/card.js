@@ -176,7 +176,7 @@ function pickPost(event) {
 }
 
 function googleSearch(event) {
-  console.log('google');
+  //console.log('google');
   var post = pickPost(event);
   window.open(`https://www.google.co.jp/search?q=${post.title}+${post.women}`, '_blank');
 };

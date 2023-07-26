@@ -104,6 +104,9 @@ function saveButtonClick(event) {
           updateSearchResult(res);
         }, (error) => {
           alert(error);
+          if (error.stack) {
+            alert(error.stack);
+          }
         });
     } else {
       post.imageIds.forEach((u, i) => {
@@ -117,6 +120,9 @@ function saveButtonClick(event) {
             updateSearchResult(res);
           }, (error) => {
             alert(error);
+            if (error.stack) {
+              alert(error.stack);
+            }
           });
       });
     }
