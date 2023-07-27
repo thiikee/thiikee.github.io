@@ -51,11 +51,12 @@ function openEditDialog(post) {
   $editDialog.find('#fb-post-created-at').val(post.createdAt);
   // Images
   $postUrls.empty();
-  post.images.forEach((i) => {
+  post.images.forEach((i, n) => {
     var postUrl = $.parseHTML(urlTemplate);
     $(postUrl).find('.fb-post-url').attr('data-image-id', i.id);
     $(postUrl).find('.fb-post-url').attr('src', i.url);
     $postUrls.append(postUrl);
+    $(postUrl).find('.fb-image-index').text(n);
   });
   // Title
   $editDialog.find('#fb-post-title').val(post.title);

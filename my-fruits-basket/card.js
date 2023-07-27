@@ -5,7 +5,7 @@ export { createCard };
 const $cardTemplate = $('#fb-card-template').prop('outerHTML');
 
 (() => {
-  $(document).on('slide.bs.carousel', '.carousel.lazy', lazyLoadImage);
+  $(document).on('slid.bs.carousel', '.carousel.lazy', lazyLoadImage);
   $(document).on('click', '.fb-edit-post-button', editPost);
   $(document).on('click', '.fb-view-post-button', viewCurrentImage);
   $(document).on('click', '.fb-google-title', googleSearch);
@@ -82,6 +82,7 @@ function createCard(post, callback) {
       return $(carouselItem).prop('outerHTML');
     }).join(''));
   }
+  $(card).find('.fb-carousel-index').text(post.cover);
   $(card).find('.fb-post-title').text(post.title);
   $(card).find('.fb-post-comment').text(post.comment);
   $(card).find('.fb-post-cover').text(post.cover);
@@ -131,6 +132,9 @@ function createBadge(card, items, areaClass, badgeClass) {
 
 function lazyLoadImage(event) {
   var lazy = $(event.relatedTarget).find('img[data-src]');
+  var card = $(event.target.closest('.card'));
+  var index = card.find('.fb-carousel-index');
+  index.text($(event.relatedTarget).parent().parent().find('.fb-post-carousel-item.active').index());
   //console.log($(lazy).data('src'));
   $(lazy).attr('src', $(lazy).data('src'));
   $(lazy).removeAttr('data-src');
