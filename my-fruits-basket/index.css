@@ -67,20 +67,13 @@ img.firebaseui-idp-icon {
   .card-columns {
     column-count: 1;
   }
-}
+}*/
 
 @media screen and (min-width: 993px) {
   .bricklayer-column-sizer {
+    /* divide by 3. */
     width: 33.3%;
   }
-}*/
-.bricklayer {
-  width: 100%;
-}
-
-.bricklayer-column-sizer {
-  /* divide by 3. */
-  width: 25%;
 }
 
 .select-pure__options {
