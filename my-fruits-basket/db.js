@@ -114,29 +114,33 @@ async function getPosts(criteria, lastVisibleCount, callback) {
     q = query(q, limit(criteria.limit));
   }
   //console.log(q);
-  var snapshot = await getDocs(q);
-  lastVisible = snapshot.docs[snapshot.docs.length - 1];
-  //console.log(snapshot);
-  callback(snapshot.docs.map((p) => {
-    //console.log(p.data());
-    return {
-      id: p.id,
-      title: p.data().title,
-      type: p.data().type,
-      images: p.data().images,
-      imageIds: p.data().imageIds,
-      cover: p.data().cover,
-      albums:p.data().albums,
-      women: p.data().women,
-      artists: p.data().artists,
-      tags: p.data().tags,
-      videoUrl: [],
-      love: p.data().love,
-      comment: p.data().comment,
-      createdAt: p.data().createdAt? p.data().createdAt.toDate() : null,
-      discarded: p.data().discarded
-    }
-  }));
+  try {
+    var snapshot = await getDocs(q);
+    lastVisible = snapshot.docs[snapshot.docs.length - 1];
+    //console.log(snapshot);
+    callback(snapshot.docs.map((p) => {
+      //console.log(p.data());
+      return {
+        id: p.id,
+        title: p.data().title,
+        type: p.data().type,
+        images: p.data().images,
+        imageIds: p.data().imageIds,
+        cover: p.data().cover,
+        albums:p.data().albums,
+        women: p.data().women,
+        artists: p.data().artists,
+        tags: p.data().tags,
+        videoUrl: [],
+        love: p.data().love,
+        comment: p.data().comment,
+        createdAt: p.data().createdAt? p.data().createdAt.toDate() : null,
+        discarded: p.data().discarded
+      }
+    }));
+  } catch (e) {
+    alert(e);
+  }
 }
 
 async function getAllTypes() {

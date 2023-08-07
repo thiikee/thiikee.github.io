@@ -16,17 +16,17 @@ $(() => {
 });
 
 function searchPosts(event) {
-  if (inProgress) return;
-  inProgress = true;
+  //if (inProgress) return;
+  //inProgress = true;
   if (event.data.reset) resetSearchResult();
-  showProgress();
+  //showProgress();
   var criteria = getSearchCriteria();
   getPosts(criteria, lastVisible, (posts) => {
     //console.log(posts);
     setSearchResult(posts);
     setOpacity();
-    inProgress = false;
-    hideProgress();
+    //inProgress = false;
+    //hideProgress();
   });
 }
 
