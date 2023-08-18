@@ -115,14 +115,13 @@ function createCard(post, callback) {
 
 function createBadge(card, items, areaClass, badgeClass) {
   if (items) {
+    //console.log(items);
     var area = $(card).find(areaClass);
     var template = $(card).find(badgeClass).prop('outerHTML');
     items.forEach((e) => {
       var badge = $.parseHTML(template);
       $(badge).text(e);
-      if (e === 'Discarded')
-      $(badge).addClass('fb-post-album-memorable');
-      else if (e === 'Nyaa') {
+      if (e === 'Nyaa') {
         $(badge).addClass('fb-post-tag-nyaa');
       }
       $(area).append(badge);

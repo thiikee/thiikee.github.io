@@ -223,6 +223,7 @@ function selectGoogleFolder(event) {
           $img.attr('alt', item.lastModifiedDateTime);
           $img.attr('data-image-id', item.id);
           $img.attr('data-image-title', item.name.replace(/\.[^/.]+$/, ''));
+          setOpacity();
         }
       }
     })
