@@ -90,17 +90,17 @@ async function getPosts(criteria, lastVisibleCount, callback) {
     } else {
     }
   }
-// women, artists, tags are exclusive.
-  if (criteria.women && criteria.women.length > 0) {
+  // album, women, artists, tags are exclusive.
+  if (criteria.album && criteria.album.length > 0) {
+    q = query(q, where('albums', 'array-contains', criteria.album));
+  } else if (criteria.women && criteria.women.length > 0) {
     //console.log(criteria.women);
     //console.log(criteria.aliases);
     q = query(q, where('women', 'array-contains-any', criteria.women.concat(criteria.aliases)));
-  }
-  else if (criteria.artists && criteria.artists.length > 0) {
+  } else if (criteria.artists && criteria.artists.length > 0) {
     //console.log(criteria.artists);
     q = query(q, where('artists', 'array-contains-any', criteria.artists));
-  }
-  else if (criteria.tags && criteria.tags.length > 0) {
+  } else if (criteria.tags && criteria.tags.length > 0) {
     //console.log(criteria.tags);
     // A maximum of 1 'ARRAY_CONTAINS' filter is allowed per disjunction.
     //for (var i = 0; i < criteria.tags.length; i++) {
@@ -139,6 +139,7 @@ async function getPosts(criteria, lastVisibleCount, callback) {
       }
     }));
   } catch (e) {
+    console.log(e);
     alert(e);
   }
 }
