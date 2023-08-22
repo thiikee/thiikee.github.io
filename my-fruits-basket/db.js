@@ -124,6 +124,7 @@ async function getPosts(criteria, lastVisibleCount, callback) {
         id: p.id,
         title: p.data().title,
         type: p.data().type,
+        movie: p.data().movie,
         images: p.data().images,
         imageIds: p.data().imageIds,
         cover: p.data().cover,
@@ -131,7 +132,6 @@ async function getPosts(criteria, lastVisibleCount, callback) {
         women: p.data().women,
         artists: p.data().artists,
         tags: p.data().tags,
-        videoUrl: [],
         love: p.data().love,
         comment: p.data().comment,
         createdAt: p.data().createdAt? p.data().createdAt.toDate() : null,
@@ -196,6 +196,7 @@ async function getAllAliases() {
 async function getAllTags() {
   var snapshot = await getDocs(query(collection(db, 'tags'), orderBy('yomi')));
   return snapshot.docs.map((t) => {
+    console.log(t.id, t.data().name);
     return {
       name: t.data().name,
       yomi: t.data().yomi
@@ -208,6 +209,7 @@ async function savePost(post) {
   var data = {
     title: post.title,
     type: post.type,
+    movie: post.movie,
     images: post.images,
     imageIds: post.imageIds,
     cover: post.cover ? parseInt(post.cover) : 0,

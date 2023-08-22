@@ -131,6 +131,7 @@
 
     <!-- Card-->
     <div id="fb-card-template" class="card box-shadow mb-3 d-none fb-post">
+      <video class="d-none w-100 fb-post-movie" controls onerror="this.style.display='none'"></video>
       <div id="fb-carousel" class="carousel slide lazy fb-post-carousel" data-interval="false" data-ride="false">
         <div class="carousel-inner">
           <div class="fb-post-carousel-items">
@@ -249,6 +250,14 @@
                   <input id="fb-post-title" class="form-control" required>
                 </div>
               </div>
+              <!-- Movie -->
+              <div class="form-group">
+                <video class="w-100 fb-post-movie" controls onerror="this.style.display='none'"></video>
+                <label class="col-form-label fb-form-label">Movie</label>
+                <div class="input-group">
+                  <input id="fb-post-movie-url" class="form-control">
+                </div>
+              </div>
               <!-- Image -->
               <div class="form-group">
                 <div class="form-inline">
@@ -324,6 +333,10 @@
               <!-- Types -->
               <div class="form-group fb-post-types mb-0">
                 <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="fb-post-type" value="movie" required>
+                  <label class="form-check-label fb-post-type">movie</label>
+                </div>
+                <div class="form-check form-check-inline">
                   <input class="form-check-input" type="radio" name="fb-post-type" value="video" required>
                   <label class="form-check-label fb-post-type">video</label>
                 </div>
@@ -348,13 +361,6 @@
                   <label class="form-check-label fb-post-type">GIF</label>
                 </div>
               </div>
-              <!-- Video URL -->
-              <!--
-              <div class="form-group">
-                <label class="col-form-label fb-form-label">URL</label>
-                <input id="fb-post-video-url" class="form-control">
-              </div>
-              -->
               <!-- Love -->
               <div>
                 <input type="hidden" id="fb-post-love">

@@ -47,8 +47,13 @@ function openEditDialog(post) {
   }
   // Id
   $editDialog.find('#fb-post-id').val(post.id);
+  // Title
+  $editDialog.find('#fb-post-title').val(post.title);
   // Created at
   $editDialog.find('#fb-post-created-at').val(post.createdAt);
+  // Movie
+  $editDialog.find('.fb-post-movie').attr('src', post.movie);
+  $editDialog.find('#fb-post-movie-url').val(post.movie);
   // Images
   $postUrls.empty();
   post.images.forEach((i, n) => {
@@ -58,8 +63,6 @@ function openEditDialog(post) {
     $postUrls.append(postUrl);
     $(postUrl).find('.fb-image-index').text(n);
   });
-  // Title
-  $editDialog.find('#fb-post-title').val(post.title);
   // Type
   $('input:radio[name="fb-post-type"]').val([post.type]);
   // Love
@@ -158,10 +161,10 @@ function pickPost(event) {
     individual: $('#fb-post-individual:checked').val(),
     title: $('#fb-post-title').val(),
     type: dialog.find('input[name="fb-post-type"]:checked').val(),
+    movie: dialog.find('#fb-post-movie-url').val(),
     imageIds: dialog.find('.fb-post-url').get().map((u) => $(u).attr('data-image-id')),
     imageTitles: dialog.find('.fb-post-url').get().map((u) => $(u).attr('data-image-title')),
     images: dialog.find('.fb-post-url').get().map((u) => $(u).attr('src')).filter((u) => u.length > 0),
-    videoUrl: dialog.find('.fb-movie').get().map((u) => $(u).attr('href')).filter((u) => u.length > 0),
     love: $('#fb-post-love').val() == 'love',
     women: womenSelectEdit.value(),
     artists: artistsSelectEdit.value(),

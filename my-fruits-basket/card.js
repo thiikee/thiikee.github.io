@@ -20,13 +20,19 @@ function createCard(post, callback) {
     $(card).css('background-color', 'silver');
   }
   $(card).attr('id', post.id);
+  if (post.movie) {
+    var $movie = $(card).find('.fb-post-movie');
+    $movie.attr('src', `${post.movie}#t=${post.cover}`)
+    $movie.attr('data-src', post.movie)
+    $movie.removeClass('d-none');
+  }
   var carouselId = `fb-post-carousel-${post.id}`;
   $(card).find('.fb-post-carousel').attr('id', carouselId);
   $(card).find('.fb-post-carousel-control').attr('href', `#${carouselId}`);
   var carouselItems = $(card).find('.fb-post-carousel-items');
   var carouselItemTemplate = $(card).find('.fb-post-carousel-item').prop('outerHTML');
   carouselItems.empty();
-  if (post.imageIds) {
+  if (post.imageIds && post.imageIds.length > 0) {
     post.imageIds.forEach((imageId, i, a) => {
       //console.log(imageId);
       var carouselItem = $.parseHTML(carouselItemTemplate);
@@ -61,6 +67,7 @@ function createCard(post, callback) {
     });
   } else if (post.images) {
     carouselItems.append(post.images.map((u, i, a) => {
+      //console.log(u);
       var carouselItem = $.parseHTML(carouselItemTemplate);
       var $img = $(carouselItem).find('.fb-post-image');
       $img.attr('data-image-url', u);
@@ -93,11 +100,6 @@ function createCard(post, callback) {
     $(card).find('.fb-post-love').removeClass('fas').addClass('far').css('color', 'white');
   }
   $(card).find('.fb-post-type').text(post.type);
-  if (post.videoUrl) {
-    post.videoUrl.forEach((v, i, a) => {
-      $(card).find('.fb-movies').append(`<a class="fb-movie fa fa-film mr-1" href="${v}" target="_blank" style="text-decoration: none; color: purple;"></a>`);
-    });
-  }
   createBadge(card, post.women, '.fb-post-women', '.fb-post-woman');
   createBadge(card, post.artists, '.fb-post-artists', '.fb-post-artist');
   createBadge(card, post.tags, '.fb-post-tags', '.fb-post-tag');
@@ -161,13 +163,13 @@ function pickPost(event) {
     id: card.attr('id'),
     title: card.find('.fb-post-title').text(),
     type: card.find('.fb-post-type').text(),
+    movie: card.find('.fb-post-movie').attr('data-src'),
     images: card.find('.fb-post-image').get().map((i) => {
       return {
         id: $(i).data('image-id'),
         url: $(i).data('image-url')
       }
     }),
-    videoUrl: card.find('.fb-view-post-button').attr('data-href'),
     love: card.find('.fb-post-love').css('color') == 'rgb(255, 0, 0)',
     discarded: card.css('background-color') == 'rgb(192, 192, 192)',
     women: card.find('.fb-post-woman').get().map((w) => $(w).text()),

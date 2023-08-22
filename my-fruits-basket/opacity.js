@@ -7,8 +7,10 @@ function setOpacity() {
   //console.log(mod);
   if (mod === 0) {
     $('img').css({'opacity': '0.1'});
+    $('video').css({'opacity': '0.1'});
   } else if (mod === 1) {
     $('img').css({'opacity': '1'});
+    $('video').css({'opacity': '1'});
   }
 }
 
