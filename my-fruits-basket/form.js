@@ -6,7 +6,7 @@ export { initForm };
 
 function initForm(form)
 {
-  $(form).find('textarea, :text, select').val('').end().find(':checked').prop('checked', false);
+  $(form).find('textarea, :text, select, video').val('').end().find(':checked').prop('checked', false);
 }
 
 function closeDialog(event) {
