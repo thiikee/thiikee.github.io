@@ -17,7 +17,8 @@ function createCard(post, callback) {
   var card = $.parseHTML($cardTemplate);
   $(card).removeClass('d-none');
   if (post.discarded && post.discarded == 1) {
-    $(card).css('background-color', 'silver');
+    var $cardBody = $(card).find('.card-body');
+    $cardBody.css('background-color', 'silver');
   }
   $(card).attr('id', post.id);
   if (post.movie) {
@@ -171,7 +172,7 @@ function pickPost(event) {
       }
     }),
     love: card.find('.fb-post-love').css('color') == 'rgb(255, 0, 0)',
-    discarded: card.css('background-color') == 'rgb(192, 192, 192)',
+    discarded: card.find('.card-body').css('background-color') == 'rgb(192, 192, 192)',
     women: card.find('.fb-post-woman').get().map((w) => $(w).text()),
     artists: card.find('.fb-post-artist').get().map((a) => $(a).text()),
     tags: card.find('.fb-post-tag').get().map((t) => $(t).text()),
