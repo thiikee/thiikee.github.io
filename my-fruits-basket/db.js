@@ -90,6 +90,9 @@ async function getPosts(criteria, lastVisibleCount, callback) {
     } else {
     }
   }
+  if (criteria.love) {
+    q = query(q, where('love', '==', true));
+  }
   // album, women, artists, tags are exclusive.
   if (criteria.album && criteria.album.length > 0) {
     q = query(q, where('albums', 'array-contains', criteria.album));
