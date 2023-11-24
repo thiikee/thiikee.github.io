@@ -18,7 +18,21 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
+var sqldb;
 var lastVisible;
+
+initSqlJs({
+  locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.6.2/${file}`
+}).then(async function(SQL) {
+let sqlFilePath = "/my-fruits-basket/db.sqlite";
+const dataPromise = await fetch(sqlFilePath).then(res => res.arrayBuffer());
+const u8array = new Uint8Array(dataPromise);
+sqldb = new SQL.Database(new Uint8Array(u8array));
+//let query = "SELECT name FROM women";
+//let contents = sqldb.exec(query);
+//res = JSON.stringify(contents);
+//console.log(contents);
+});
 
 function signInDatabase() {
   onAuthStateChanged(auth, (user) => {
@@ -61,6 +75,158 @@ function signInDatabase() {
 }
 
 async function getPosts(criteria, lastVisibleCount, callback) {
+  if (sqldb) {
+    console.log(criteria);
+    var womenJoin = '';
+    if (criteria.women && criteria.women.length > 0) {
+      for (var i = 0; i < criteria.women.length; i++) {
+        womenJoin += `
+          INNER JOIN [cast] AS cast_${i} ON posts.id = cast_${i}.postId AND cast_${i}.womanName IN (
+            SELECT '${criteria.women[i]}' UNION
+            SELECT alias FROM aliases WHERE name = '${criteria.women[i]}' UNION
+            SELECT name FROM aliases WHERE alias = '${criteria.women[i]}'
+          ) `;
+      }
+    }
+    var artistsJoin = '';
+    if (criteria.artists && criteria.artists.length > 0) {
+      for (var i = 0; i < criteria.artists.length; i++) {
+        artistsJoin += `
+          INNER JOIN [work] AS work_${i} ON posts.id = work_${i}.postId AND work_${i}.artistName IN (
+            SELECT '${criteria.artists[i]}' UNION
+            SELECT alias FROM aliases WHERE name = '${criteria.artists[i]}' UNION
+            SELECT name FROM aliases WHERE alias = '${criteria.artists[i]}'
+          ) `;
+      }
+    }
+    var tagsJoin = '';
+    if (criteria.tags && criteria.tags.length > 0) {
+      for (var i = 0; i < criteria.tags.length; i++) {
+        tagsJoin += `INNER JOIN v_tagging AS v_tagging_${i} ON posts.id = v_tagging_${i}.postId AND v_tagging_${i}.name = '${criteria.tags[i]}' `;
+      }
+    }
+    var albumJoin = '';
+    if (criteria.album) {
+      albumJoin += `INNER JOIN v_binding ON posts.id = v_binding.postId AND v_binding.name = '${criteria.album}' `;
+    }
+    var where = '';
+    if (criteria.title) {
+      where += ` AND a.title LIKE '%${criteria.title}%'`;
+    }
+    if (criteria.type) {
+      where += ` AND a.type = '${criteria.type}'`;
+    }
+    console.log(criteria.love);
+    if (criteria.love) {
+      where += ` AND a.love = 1`;
+    }
+    if (criteria.keeping) {
+      if (!criteria.discarded) {
+        where += ` AND (a.discarded IS NULL OR a.discarded = 0)`;
+      }
+    } else {
+      if (criteria.discarded) {
+        where += ` AND (a.discarded = 1)`;
+      } else {
+        where += ` AND (1 = 0)`;
+      }
+    }
+    var order = 'createdAt';
+    var ascending = "DESC";
+    var limit = 10;
+    var sql = `
+    SELECT
+      a.*,
+      b.women,
+      e.artists,
+      c.tags,
+      d.albums,
+      i.imageIds,
+      m.movieUrls
+     FROM (
+      SELECT
+        posts.*
+      FROM posts
+      ${womenJoin}
+      ${artistsJoin}
+      ${tagsJoin}
+      ${albumJoin}
+    ) a
+    LEFT OUTER JOIN (
+      SELECT
+        postId,
+        json_group_array(imageId) AS imageIds
+      FROM [images]
+      GROUP BY postId
+    ) i ON a.id = i.postId
+    LEFT OUTER JOIN (
+      SELECT
+        postId,
+        json_group_array(url) AS movieUrls
+      FROM [movies]
+      GROUP BY postId
+    ) m ON a.id = m.postId
+    LEFT OUTER JOIN (
+      SELECT
+        postId,
+        json_group_array(womanName) AS women
+      FROM [cast]
+      GROUP BY postId
+    ) b ON a.id = b.postId
+    LEFT OUTER JOIN (
+      SELECT
+        postId,
+        json_group_array(artistName) AS artists
+      FROM [work]
+      GROUP BY postId
+    ) e ON a.id = e.postId
+    LEFT OUTER JOIN (
+      SELECT
+        postId,
+        json_group_array(name) AS tags
+      FROM v_tagging
+      GROUP BY postId
+    ) c ON a.id = c.postId
+    LEFT OUTER JOIN (
+      SELECT
+        postId,
+        json_group_array(name) AS albums
+      FROM v_binding
+      GROUP BY postId
+    ) d ON a.id = d.postId
+    WHERE 1 = 1 ${where}
+    ORDER BY a.${order} ${ascending}, a.title
+    LIMIT ${limit}
+    OFFSET ${lastVisibleCount}
+    `;
+    console.log(sql);
+    let contents = sqldb.exec(sql);
+    console.log(contents);
+    if (contents[0]) {
+      console.log(contents[0].values);
+      callback(contents[0].values.map((p) => {
+        return {
+          id: p[0],
+          title: p[1],
+          type: p[2],
+          movie: p[15]? JSON.parse(p[15])[0] : null,
+          imageIds: JSON.parse(p[14]),
+          cover: p[4],
+          albums:JSON.parse(p[13]),
+          women: JSON.parse(p[10]),
+          artists: JSON.parse(p[11]),
+          tags: JSON.parse(p[12]),
+          love: p[3],
+          comment: p[5],
+          createdAt: p[7]? p[7] : null,
+          discarded: p[6]
+        }
+      }));
+    } else {
+      callback([]);
+    }
+  }
+  /*
   //console.log(criteria);
   if (lastVisibleCount == 0) {
     lastVisible = undefined;
@@ -145,6 +311,7 @@ async function getPosts(criteria, lastVisibleCount, callback) {
     console.log(e);
     alert(e);
   }
+  */
 }
 
 async function getAllTypes() {
