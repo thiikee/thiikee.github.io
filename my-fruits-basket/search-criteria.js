@@ -16,6 +16,9 @@ const $searchAlbum = $('#fb-search-album');
 const $searchLove = $('#fb-search-love');
 const $searchHeart = $('#fb-search-heart');
 const $ascending = $('#fb-search-ascending');
+const $womenOr = $('#fb-search-women-or');
+const $artistsOr = $('#fb-search-artists-or');
+const $tagsOr = $('#fb-search-tags-or');
 var initCriteria = false;
 
 (() => {
@@ -42,9 +45,12 @@ function getSearchCriteria() {
     type: $type.val(),
     album: $album.val(),
     women: womenSelectSearch.value(),
+    womenOr: $womenOr.prop('checked'),
     aliases: getWomenAliases(womenSelectSearch.value()),
     artists: artistsSelectSearch.value(),
+    artistsOr: $artistsOr.prop('checked'),
     tags: tagsSelectSearch.value(),
+    tagsOr: $tagsOr.prop('checked'),
     orderBy: $('input[name="fb-search-order-by"]:checked').val(),
     ascending: $ascending.prop('checked'),
     keeping: $keeping.prop('checked'),

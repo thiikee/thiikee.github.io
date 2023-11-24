@@ -79,30 +79,69 @@ async function getPosts(criteria, lastVisibleCount, callback) {
     console.log(criteria);
     var womenJoin = '';
     if (criteria.women && criteria.women.length > 0) {
-      for (var i = 0; i < criteria.women.length; i++) {
-        womenJoin += `
-          INNER JOIN [cast] AS cast_${i} ON posts.id = cast_${i}.postId AND cast_${i}.womanName IN (
-            SELECT '${criteria.women[i]}' UNION
-            SELECT alias FROM aliases WHERE name = '${criteria.women[i]}' UNION
-            SELECT name FROM aliases WHERE alias = '${criteria.women[i]}'
-          ) `;
+      if (criteria.womenOr) {
+        womenJoin = 'INNER JOIN [cast] ON posts.id = [cast].postId AND [cast].womanName IN (';
+        var union = '';
+        for (var i = 0; i < criteria.women.length; i++) {
+          womenJoin += `
+              ${union}SELECT '${criteria.women[i]}' UNION
+              SELECT alias FROM aliases WHERE name = '${criteria.women[i]}' UNION
+              SELECT name FROM aliases WHERE alias = '${criteria.women[i]}'
+            `;
+            union = 'UNION ';
+        }
+        womenJoin += ")";
+      } else {
+        for (var i = 0; i < criteria.women.length; i++) {
+          womenJoin += `
+            INNER JOIN [cast] AS cast_${i} ON posts.id = cast_${i}.postId AND cast_${i}.womanName IN (
+              SELECT '${criteria.women[i]}' UNION
+              SELECT alias FROM aliases WHERE name = '${criteria.women[i]}' UNION
+              SELECT name FROM aliases WHERE alias = '${criteria.women[i]}'
+            ) `;
+        }
       }
     }
     var artistsJoin = '';
     if (criteria.artists && criteria.artists.length > 0) {
-      for (var i = 0; i < criteria.artists.length; i++) {
-        artistsJoin += `
-          INNER JOIN [work] AS work_${i} ON posts.id = work_${i}.postId AND work_${i}.artistName IN (
-            SELECT '${criteria.artists[i]}' UNION
-            SELECT alias FROM aliases WHERE name = '${criteria.artists[i]}' UNION
-            SELECT name FROM aliases WHERE alias = '${criteria.artists[i]}'
-          ) `;
+      if (criteria.artistsOr) {
+        artistsJoin = 'INNER JOIN [work] ON posts.id = [work].postId AND [work].artistName IN (';
+        var union = '';
+        for (var i = 0; i < criteria.artists.length; i++) {
+          artistsJoin += `
+              ${union}SELECT '${criteria.artists[i]}' UNION
+              SELECT alias FROM aliases WHERE name = '${criteria.artists[i]}' UNION
+              SELECT name FROM aliases WHERE alias = '${criteria.artists[i]}'
+            `;
+            union = 'UNION ';
+        }
+        artistsJoin += ")";
+      } else {
+        for (var i = 0; i < criteria.artists.length; i++) {
+          artistsJoin += `
+            INNER JOIN [work] AS work_${i} ON posts.id = work_${i}.postId AND work_${i}.artistName IN (
+              SELECT '${criteria.artists[i]}' UNION
+              SELECT alias FROM aliases WHERE name = '${criteria.artists[i]}' UNION
+              SELECT name FROM aliases WHERE alias = '${criteria.artists[i]}'
+            ) `;
+        }
       }
     }
     var tagsJoin = '';
     if (criteria.tags && criteria.tags.length > 0) {
-      for (var i = 0; i < criteria.tags.length; i++) {
-        tagsJoin += `INNER JOIN v_tagging AS v_tagging_${i} ON posts.id = v_tagging_${i}.postId AND v_tagging_${i}.name = '${criteria.tags[i]}' `;
+      if (criteria.tagsOr) {
+        tagsJoin = 'INNER JOIN [tagging] ON posts.id = [tagging].postId AND [tagging].tagName IN (';
+        var comma = '';
+        for (var i = 0; i < criteria.tags.length; i++) {
+          tagsJoin += `${comma}'${criteria.tags[i]}'
+            `;
+            comma = ', ';
+        }
+        tagsJoin += ')';
+      } else {
+        for (var i = 0; i < criteria.tags.length; i++) {
+          tagsJoin += `INNER JOIN v_tagging AS v_tagging_${i} ON posts.id = v_tagging_${i}.postId AND v_tagging_${i}.name = '${criteria.tags[i]}' `;
+        }
       }
     }
     var albumJoin = '';
@@ -131,9 +170,15 @@ async function getPosts(criteria, lastVisibleCount, callback) {
         where += ` AND (1 = 0)`;
       }
     }
-    var order = 'createdAt';
+    var orderBy = 'updatedAt';
+    if (criteria.orderBy) {
+      orderBy = criteria.orderBy;
+    }
     var ascending = "DESC";
-    var limit = 10;
+    if (criteria.ascending) {
+      ascending = "ASC";
+    }
+    var limit = criteria.limit;
     var sql = `
     SELECT
       a.*,
@@ -195,7 +240,7 @@ async function getPosts(criteria, lastVisibleCount, callback) {
       GROUP BY postId
     ) d ON a.id = d.postId
     WHERE 1 = 1 ${where}
-    ORDER BY a.${order} ${ascending}, a.title
+    ORDER BY a.${orderBy} ${ascending}, a.title
     LIMIT ${limit}
     OFFSET ${lastVisibleCount}
     `;
