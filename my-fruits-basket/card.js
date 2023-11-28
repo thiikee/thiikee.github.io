@@ -105,7 +105,7 @@ function createCard(post, callback) {
   createBadge(card, post.artists, '.fb-post-artists', '.fb-post-artist');
   createBadge(card, post.tags, '.fb-post-tags', '.fb-post-tag');
   createBadge(card, post.albums, '.fb-post-albums', '.fb-post-album');
-  $(card).find('.fb-post-url-count').text(post.images ? post.images.length : 0);
+  $(card).find('.fb-post-url-count').text(post.imageIds ? post.imageIds.length : 0);
   if (post.createdAt) {
     try {
       $(card).find('.fb-post-created-at').text(post.createdAt.toLocaleString('ja-JP').replace(/\//g, '-'));
