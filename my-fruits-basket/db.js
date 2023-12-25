@@ -201,7 +201,7 @@ async function getPosts(criteria, lastVisibleCount, callback) {
       SELECT
         postId,
         json_group_array(imageId) AS imageIds
-      FROM [images]
+      FROM (SELECT * FROM [images] ORDER BY [index]) AS [images]
       GROUP BY postId
     ) i ON a.id = i.postId
     LEFT OUTER JOIN (
