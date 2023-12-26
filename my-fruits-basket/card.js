@@ -109,6 +109,7 @@ function createCard(post, callback) {
   if (post.createdAt) {
     try {
       $(card).find('.fb-post-created-at').text(post.createdAt.toLocaleString('ja-JP').replace(/\//g, '-'));
+      $(card).find('.fb-post-updated-at').text(post.updatedAt.toLocaleString('ja-JP').replace(/\//g, '-'));
     } catch {}
   }
   //console.log(post.id);

@@ -264,6 +264,7 @@ async function getPosts(criteria, lastVisibleCount, callback) {
           love: p[3],
           comment: p[5],
           createdAt: p[7]? p[7] : null,
+          updatedAt: p[8]? p[8] : null,
           discarded: p[6]
         }
       }));
