@@ -254,7 +254,7 @@ async function getPosts(criteria, lastVisibleCount, callback) {
           id: p[0],
           title: p[1],
           type: p[2],
-          movie: p[15]? JSON.parse(p[15])[0] : null,
+          movie: p[14]? JSON.parse(p[14])[0] : null,
           imageIds: JSON.parse(p[13]),
           cover: p[4],
           albums:JSON.parse(p[12]),
