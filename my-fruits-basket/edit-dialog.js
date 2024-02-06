@@ -25,6 +25,7 @@ const dropboxImageTemplate = $dropboxImages.html();
   $('#fb-add-tag-button').on('click', addTagClick);
   $('#fb-post-heart').on('click', toggleLove);
   $('#fb-nyaa-button').on('click', addNyaa);
+  $('#fb-missav-button').on('click', addMissav);
   $('#fb-add-url-button').on('click', addImageClick);
   $(document).on('click', '.fb-select-google-folder', selectGoogleFolder);
   $(document).on('click', '.fb-view-url-button', inputImageUrl);
@@ -330,5 +331,11 @@ function toggleLove(event) {
 function addNyaa() {
   var tags = getSelectedEditTags();
   tags.push('Nyaa');
+  createTagsSelectEdit(tags);
+}
+
+function addMissav() {
+  var tags = getSelectedEditTags();
+  tags.push('MISSAV');
   createTagsSelectEdit(tags);
 }

@@ -125,7 +125,7 @@ function createBadge(card, items, areaClass, badgeClass) {
     items.forEach((e) => {
       var badge = $.parseHTML(template);
       $(badge).text(e);
-      if (e === 'Nyaa') {
+      if (e === 'Nyaa' || e === 'MISSAV') {
         $(badge).addClass('fb-post-tag-nyaa');
       }
       $(area).append(badge);
