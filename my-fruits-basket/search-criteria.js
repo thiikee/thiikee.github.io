@@ -5,6 +5,7 @@ import { getWomen, getWomenAliases } from './women.js';
 export { getSearchCriteria };
 
 const $love = $('#fb-search-love');
+const $use = $('#fb-search-use');
 const $title = $('#fb-search-title');
 const $type = $('#fb-search-type');
 const $album = $('#fb-search-album');
@@ -41,6 +42,7 @@ function getSearchCriteria() {
   //console.log(parseInt($searchLimit.val()));
   return {
     love: $love.val(),
+    use: $use.prop('checked'),
     title: $title.val(),
     type: $type.val(),
     album: $album.val(),

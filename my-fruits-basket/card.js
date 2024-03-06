@@ -94,6 +94,7 @@ function createCard(post, callback) {
   $(card).find('.fb-post-title').text(post.title);
   $(card).find('.fb-post-comment').text(post.comment);
   $(card).find('.fb-post-cover').text(post.cover);
+  $(card).find('.fb-post-use').text('💦'.repeat(post.use));
   $(card).find('.fb-post-alt').text(post.alt);
   if (post.love) {
     $(card).find('.fb-post-love').removeClass('far').addClass('fas').css('color', 'red');
@@ -180,6 +181,7 @@ function pickPost(event) {
     albums: card.find('.fb-post-album').get().map((a) => $(a).text()),
     comment: card.find('.fb-post-comment').text(),
     cover: card.find('.fb-post-cover').text(),
+    use: card.find('.fb-post-use').text().length / 2,
     alt: card.find('.fb-post-alt').text(),
     createdAt: card.find('.fb-post-created-at').text()
   };

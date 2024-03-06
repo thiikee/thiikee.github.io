@@ -91,6 +91,8 @@
                       <div class="col-2 text-white pl-0">
                         <input type="hidden" id="fb-search-love">
                         <i id="fb-search-heart" class="fas fa-heart ml-2 mr-2"></i>
+                        <span >💦</span>
+                        <input id="fb-search-use" type="checkbox">
                     </div>
                   </div>
                   </li>
@@ -213,7 +215,10 @@
         </div>
         <div><span>Created at: </span><span class="fb-post-created-at"></span></div>
         <div><span>Updated at: </span><span class="fb-post-updated-at"></span></div>
-        <div class="fb-post-id"></div>
+        <div class="row">
+          <div class="col fb-post-id"></div>
+          <div class="col fb-post-use text-right"></div>
+        </div>
         <div class="fb-post-alt"></div>
       </div>
     </div>
@@ -417,11 +422,13 @@
               <!-- Discarded -->
               <div>
                 <div class="row">
-                  <div class="col-2">
+                  <div class="col-3">
                     <label class="col-form-label fb-form-label">Cover</label>
-                  </div>
-                  <div class="col-4">
                     <input type="number" class="form-control" id="fb-post-cover">
+                  </div>
+                  <div class="col-3">
+                    <label class="col-form-label fb-form-label">Use</label>
+                    <input type="number" class="form-control" id="fb-post-use">
                   </div>
                   <div class="col-6">
                     <input type="checkbox" id="fb-post-discarded" value="1">

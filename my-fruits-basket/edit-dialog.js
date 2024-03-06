@@ -87,6 +87,7 @@ function openEditDialog(post) {
   // Alt
   $editDialog.find('#fb-post-alt').val(post.alt);
   $editDialog.find('#fb-post-cover').val(post.cover);
+  $editDialog.find('#fb-post-use').val(post.use);
   // Delete button
   if (!post.id) {
     $('#fb-delete-post-button').addClass('d-none');
@@ -173,6 +174,7 @@ function pickPost(event) {
     albums: albumsSelectEdit.value(),
     comment: $('#fb-post-comment').val(),
     cover: $('#fb-post-cover').val(),
+    use: $('#fb-post-use').val(),
     alt: $('#fb-post-alt').val(),
     createdAt: $('#fb-post-created-at').val()
   };

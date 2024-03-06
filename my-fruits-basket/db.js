@@ -159,6 +159,10 @@ async function getPosts(criteria, lastVisibleCount, callback) {
     if (criteria.love) {
       where += ` AND a.love = 1`;
     }
+    console.log(criteria.use);
+    if (criteria.use) {
+      where += ` AND a.use >= 1`;
+    }
     if (criteria.keeping) {
       if (!criteria.discarded) {
         where += ` AND (a.discarded IS NULL OR a.discarded = 0)`;
@@ -254,18 +258,19 @@ async function getPosts(criteria, lastVisibleCount, callback) {
           id: p[0],
           title: p[1],
           type: p[2],
-          movie: p[14]? JSON.parse(p[14])[0] : null,
-          imageIds: JSON.parse(p[13]),
+          movie: p[15]? JSON.parse(p[15])[0] : null,
+          imageIds: JSON.parse(p[14]),
           cover: p[4],
-          albums:JSON.parse(p[12]),
-          women: JSON.parse(p[9]),
-          artists: JSON.parse(p[10]),
-          tags: JSON.parse(p[11]),
+          albums:JSON.parse(p[13]),
+          women: JSON.parse(p[10]),
+          artists: JSON.parse(p[11]),
+          tags: JSON.parse(p[12]),
           love: p[3],
           comment: p[5],
           createdAt: p[7]? p[7] : null,
           updatedAt: p[8]? p[8] : null,
-          discarded: p[6]
+          discarded: p[6],
+          use: p[9]
         }
       }));
     } else {
@@ -429,6 +434,7 @@ async function savePost(post) {
     images: post.images,
     imageIds: post.imageIds,
     cover: post.cover ? parseInt(post.cover) : 0,
+    use: post.use ? parseInt(post.use) : 0,
     albums: post.albums,
     women: post.women,
     artists: post.artists,
