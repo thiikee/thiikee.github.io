@@ -77,7 +77,11 @@ function signInDatabase() {
 async function getPosts(criteria, lastVisibleCount, callback) {
   if (sqldb) {
     console.log(criteria);
+    var where = '';
     var womenJoin = '';
+    var artistsJoin = '';
+    var tagsJoin = '';
+    var albumJoin = '';
     if (criteria.women && criteria.women.length > 0) {
       if (criteria.womenOr) {
         womenJoin = 'INNER JOIN [cast] ON posts.id = [cast].postId AND [cast].womanName IN (';
@@ -102,7 +106,6 @@ async function getPosts(criteria, lastVisibleCount, callback) {
         }
       }
     }
-    var artistsJoin = '';
     if (criteria.artists && criteria.artists.length > 0) {
       if (criteria.artistsOr) {
         artistsJoin = 'INNER JOIN [work] ON posts.id = [work].postId AND [work].artistName IN (';
@@ -127,7 +130,6 @@ async function getPosts(criteria, lastVisibleCount, callback) {
         }
       }
     }
-    var tagsJoin = '';
     if (criteria.tags && criteria.tags.length > 0) {
       if (criteria.tagsOr) {
         tagsJoin = 'INNER JOIN [tagging] ON posts.id = [tagging].postId AND [tagging].tagName IN (';
@@ -144,11 +146,9 @@ async function getPosts(criteria, lastVisibleCount, callback) {
         }
       }
     }
-    var albumJoin = '';
     if (criteria.album) {
       albumJoin += `INNER JOIN v_binding ON posts.id = v_binding.postId AND v_binding.name = '${criteria.album}' `;
     }
-    var where = '';
     if (criteria.title) {
       where += ` AND a.title LIKE '%${criteria.title}%'`;
     }

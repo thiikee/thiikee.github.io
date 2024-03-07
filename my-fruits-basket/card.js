@@ -11,6 +11,7 @@ const $cardTemplate = $('#fb-card-template').prop('outerHTML');
   $(document).on('click', '.fb-view-post-button', viewCurrentImage);
   $(document).on('click', '.fb-google-title', googleSearch);
   $(document).on('click', '.fb-nyaa', nyaaSearch);
+  $(document).on('click', '.fb-missav', missavSearch);
 })();
 
 function createCard(post, callback) {
@@ -199,5 +200,11 @@ function nyaaSearch(event) {
   if (post.women.length == 1)
     url += `+${post.women}`;
   url += '&f=0&c=0_0';
+  window.open(url, '_blank');
+}
+
+function missavSearch(event) {
+  var post = pickPost(event);
+  var url = `https://missav.com/ja/search/${post.title.replace(/ ?[0-9]+歳$/, '')}`;
   window.open(url, '_blank');
 }
