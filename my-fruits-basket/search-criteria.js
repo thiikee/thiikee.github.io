@@ -11,6 +11,8 @@ const $type = $('#fb-search-type');
 const $album = $('#fb-search-album');
 const $keeping = $('#fb-search-include-keeping');
 const $discarded = $('#fb-search-include-discarded');
+const $have = $('#fb-search-include-have');
+const $want = $('#fb-search-include-want');
 const $searchLimit = $('#fb-search-limit');
 const $searchType = $('#fb-search-type');
 const $searchAlbum = $('#fb-search-album');
@@ -57,6 +59,8 @@ function getSearchCriteria() {
     ascending: $ascending.prop('checked'),
     keeping: $keeping.prop('checked'),
     discarded: $discarded.prop('checked'),
+    have: $have.prop('checked'),
+    want: $want.prop('checked'),
     limit: parseInt($searchLimit.val())
   };
 }

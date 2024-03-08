@@ -102,6 +102,11 @@ function createCard(post, callback) {
   } else {
     $(card).find('.fb-post-love').removeClass('fas').addClass('far').css('color', 'white');
   }
+  if (post.have) {
+    $(card).find('.fb-post-have').show();
+  } else {
+    $(card).find('.fb-post-have').hide();
+  }
   $(card).find('.fb-post-type').text(post.type);
   createBadge(card, post.women, '.fb-post-women', '.fb-post-woman');
   createBadge(card, post.artists, '.fb-post-artists', '.fb-post-artist');

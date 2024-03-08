@@ -167,6 +167,7 @@ function pickPost(event) {
     imageIds: dialog.find('.fb-post-url').get().map((u) => $(u).attr('data-image-id')),
     imageTitles: dialog.find('.fb-post-url').get().map((u) => $(u).attr('data-image-title')),
     images: dialog.find('.fb-post-url').get().map((u) => $(u).attr('src')).filter((u) => u.length > 0),
+    have: dialog.find('#fb-post-have').prop('checked'),
     love: $('#fb-post-love').val() == 'love',
     women: womenSelectEdit.value(),
     artists: artistsSelectEdit.value(),

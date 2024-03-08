@@ -174,6 +174,17 @@ async function getPosts(criteria, lastVisibleCount, callback) {
         where += ` AND (1 = 0)`;
       }
     }
+    if (criteria.have) {
+      if (!criteria.want) {
+        where += ` AND (a.have = 1)`;
+      }
+    } else {
+      if (criteria.want) {
+        where += ` AND (a.have IS NULL OR a.have = 0)`;
+      } else {
+        where += ` AND (1 = 0)`;
+      }
+    }
     var orderBy = 'updatedAt';
     if (criteria.orderBy) {
       orderBy = criteria.orderBy;
@@ -258,19 +269,20 @@ async function getPosts(criteria, lastVisibleCount, callback) {
           id: p[0],
           title: p[1],
           type: p[2],
-          movie: p[15]? JSON.parse(p[15])[0] : null,
-          imageIds: JSON.parse(p[14]),
+          movie: p[16]? JSON.parse(p[16])[0] : null,
+          imageIds: JSON.parse(p[15]),
           cover: p[4],
-          albums:JSON.parse(p[13]),
-          women: JSON.parse(p[10]),
-          artists: JSON.parse(p[11]),
-          tags: JSON.parse(p[12]),
+          albums:JSON.parse(p[14]),
+          women: JSON.parse(p[11]),
+          artists: JSON.parse(p[12]),
+          tags: JSON.parse(p[13]),
           love: p[3],
           comment: p[5],
           createdAt: p[7]? p[7] : null,
           updatedAt: p[8]? p[8] : null,
           discarded: p[6],
-          use: p[9]
+          use: p[9],
+          have: p[10]
         }
       }));
     } else {
@@ -439,6 +451,7 @@ async function savePost(post) {
     women: post.women,
     artists: post.artists,
     tags: post.tags,
+    have: post.have,
     love: post.love,
     comment: post.comment,
     createdAt: post.createdAt ? post.createdAt : serverTimestamp(),

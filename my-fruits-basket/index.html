@@ -87,6 +87,10 @@
                         <label class="text-white ml-1">Keeping</label>
                         <input id="fb-search-include-discarded" type="checkbox" class="ml-4" checked>
                         <label class="text-white ml-1">Discarded</label>
+                        <input id="fb-search-include-have" type="checkbox" class="ml-4" checked>
+                        <label class="text-white ml-1">Have</label>
+                        <input id="fb-search-include-want" type="checkbox" class="ml-4" checked>
+                        <label class="text-white ml-1">Want</label>
                       </div>
                       <div class="col-2 text-white pl-0">
                         <input type="hidden" id="fb-search-love">
@@ -170,6 +174,7 @@
           <h5 class="card-title fb-post-title d-inline"></h5>
           <i class="fa-heart pull-right fb-post-love"></i></span>
           <pre style="white-space: pre-wrap"><div class="fb-post-comment"></div></pre>
+          <div class="fb-post-have badge" style="color:white; background-color:maroon;">Have</div>
           <div class="fb-post-albums">
             <span class="badge mr-1 fb-post-album"></span>
           </div>
@@ -380,8 +385,11 @@
                   <label class="form-check-label fb-post-type">GIF</label>
                 </div>
               </div>
-              <!-- Love -->
               <div>
+                 <!-- Have -->
+                <input type="checkbox" id="fb-post-have">
+                <label class="col-form-label fb-form-label">Have</label>
+                <!-- Love -->
                 <input type="hidden" id="fb-post-love">
                 <i id="fb-post-heart" class="far fa-heart"></i> Love
               </div>
