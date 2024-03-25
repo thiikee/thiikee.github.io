@@ -77,6 +77,9 @@ function openEditDialog(post) {
   if (post.discarded) {
     $editDialog.find('#fb-post-discarded').prop('checked', true);
   }
+  if (post.have) {
+    $editDialog.find('#fb-post-have').prop('checked', true);
+  }
   // Badges
   createAlbumsSelectEdit(post.albums);
   createWomenSelectEdit(post.women);

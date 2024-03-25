@@ -17,6 +17,10 @@ const $cardTemplate = $('#fb-card-template').prop('outerHTML');
 function createCard(post, callback) {
   var card = $.parseHTML($cardTemplate);
   $(card).removeClass('d-none');
+  if (post.have && post.have == 1) {
+    var $cardBody = $(card).find('.card-body');
+    $cardBody.css('background-color', '#FDDADA');
+  }
   if (post.discarded && post.discarded == 1) {
     var $cardBody = $(card).find('.card-body');
     $cardBody.css('background-color', 'silver');
@@ -102,11 +106,11 @@ function createCard(post, callback) {
   } else {
     $(card).find('.fb-post-love').removeClass('fas').addClass('far').css('color', 'white');
   }
-  if (post.have) {
-    $(card).find('.fb-post-have').show();
-  } else {
+  //if (post.have) {
+  //  $(card).find('.fb-post-have').show();
+  //} else {
     $(card).find('.fb-post-have').hide();
-  }
+  //}
   $(card).find('.fb-post-type').text(post.type);
   createBadge(card, post.women, '.fb-post-women', '.fb-post-woman');
   createBadge(card, post.artists, '.fb-post-artists', '.fb-post-artist');
@@ -181,6 +185,7 @@ function pickPost(event) {
     }),
     love: card.find('.fb-post-love').css('color') == 'rgb(255, 0, 0)',
     discarded: card.find('.card-body').css('background-color') == 'rgb(192, 192, 192)',
+    have: card.find('.card-body').css('background-color') == 'rgb(253, 218, 218)',
     women: card.find('.fb-post-woman').get().map((w) => $(w).text()),
     artists: card.find('.fb-post-artist').get().map((a) => $(a).text()),
     tags: card.find('.fb-post-tag').get().map((t) => $(t).text()),
