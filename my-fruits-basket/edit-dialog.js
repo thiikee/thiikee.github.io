@@ -1,7 +1,7 @@
 import { createWomenSelectEdit,  createArtistsSelectEdit, createTagsSelectEdit, createAlbumsSelectEdit, getSelectedEditTags } from './select-pure.js';
 import { createCard } from './card.js';
-import { replaceCard } from './search-result.js';
-import { savePost } from './db.js';
+import { deleteCard, replaceCard } from './search-result.js';
+import { savePost, deletePost } from './db.js';
 import { setOpacity } from './opacity.js';
 import { openWomanDialog } from './woman-dialog.js';
 import { openArtistDialog } from './artist-dialog.js';
@@ -20,6 +20,7 @@ const dropboxImageTemplate = $dropboxImages.html();
 
 (() => {
   $('#fb-save-post-button').on('click', saveButtonClick);
+  $('#fb-delete-post-button').on('click', deleteButtonClick);
   $('#fb-add-woman-button').on('click', addWomanClick);
   $('#fb-add-artist-button').on('click', addArtistClick);
   $('#fb-add-tag-button').on('click', addTagClick);
@@ -139,6 +140,21 @@ function saveButtonClick(event) {
   } else {
     $editForm.addClass('was-validated');
   }
+}
+
+function deleteButtonClick(event) {
+  if (!confirm('OK ?')) return;
+  var post = pickPost(event);
+  deletePost(post)
+    .then((res) => {
+      deleteCard(post);
+      $editDialog.modal('hide');
+    }, (error) => {
+      alert(error);
+      if (error.stack) {
+        alert(error.stack);
+      }
+  });
 }
 
 function addImageClick() {

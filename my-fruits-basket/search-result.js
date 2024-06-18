@@ -1,4 +1,4 @@
-export { setSearchResult, resetSearchResult, appendCard, replaceCard, lastVisible };
+export { setSearchResult, resetSearchResult, appendCard, replaceCard, deleteCard, lastVisible };
 import { createCard } from './card.js';
 
 var $resultArea = $('#search-result');
@@ -61,6 +61,12 @@ function replaceCard(id, card) {
       appendCard(card, true);
     }
   }
+}
+
+function deleteCard(card) {
+  var current = $(`#${card.id}`);
+  console.log(current);
+  current.hide();
 }
 
 function createBrickLayer(force) {

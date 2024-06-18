@@ -1,13 +1,13 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js'
 import { getAuth, signInWithPopup, OAuthProvider, setPersistence, browserSessionPersistence, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js'
-import { getFirestore, collection, query, where, orderBy, getDocs, doc, addDoc, setDoc, serverTimestamp, limit, startAt, endAt, startAfter } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js'
+import { getFirestore, collection, query, where, orderBy, getDocs, doc, addDoc, setDoc, deleteDoc, serverTimestamp, limit, startAt, endAt, startAfter } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js'
 import { setAlbums } from './albums.js';
 import { setArtists } from './artists.js';
 import { setTags } from './tags.js';
 import { setTypes } from './types.js';
 import { setWomen, setWomenAliases } from './women.js';
 export { signInDatabase, getPosts, getAllTypes, getAllAlbums, getAllWomen, getAllAliases, getAllArtists, getAllTags,
-  savePost, saveWoman, saveArtist, saveTag, auth, isOnline };
+  savePost, deletePost, saveWoman, saveArtist, saveTag, auth, isOnline };
 
 const isOnline = true;
 const firebaseConfig = {
@@ -481,6 +481,18 @@ async function savePost(post) {
         });
     });
   }
+}
+
+async function deletePost(post) {
+  return new Promise((resolve, reject) => {
+    deleteDoc(doc(db, "posts", post.id))
+      .then((docRef) => {
+        resolve(post);
+      })
+      .catch((error) => {
+        reject(error);
+      });
+  });
 }
 
 async function saveWoman(woman) {
