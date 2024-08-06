@@ -54,8 +54,13 @@ function openEditDialog(post) {
   // Created at
   $editDialog.find('#fb-post-created-at').val(post.createdAt);
   // Movie
-  $editDialog.find('.fb-post-movie').attr('src', post.movie);
-  $editDialog.find('#fb-post-movie-url').val(post.movie);
+  if (post.movie) {
+    $editDialog.find('.fb-post-movie').attr('src', post.movie);
+    $editDialog.find('#fb-post-movie-url').val(post.movie);
+  } else {
+    $editDialog.find('.fb-post-movie').attr('src', '');
+    $editDialog.find('#fb-post-movie-url').val('');
+  }
   // Images
   $postUrls.empty();
   post.images.forEach((i, n) => {

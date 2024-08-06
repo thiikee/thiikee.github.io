@@ -194,7 +194,7 @@ function pickPost(event) {
     cover: card.find('.fb-post-cover').text(),
     use: card.find('.fb-post-use').text().length / 2,
     alt: card.find('.fb-post-alt').text(),
-    createdAt: card.find('.fb-post-created-at').text()
+    createdAt: card.find('.fb-post-created-at').text().replace('T', ' ').replace('.000Z', '')
   };
 }
 
