@@ -242,7 +242,7 @@ function selectGoogleFolder(event) {
         </div>`)
       } else {
         //console.log(item);
-        if (item.file && item.file.mimeType.match(/image\/.+/i)) {
+        if (item.file/* && item.file.mimeType.match(/image\/.+/i)*/) {
           var dropboxItem = $.parseHTML(dropboxImageTemplate);
           $dropboxImages.append(dropboxItem);
           var directUrl = item['@microsoft.graph.downloadUrl'];
