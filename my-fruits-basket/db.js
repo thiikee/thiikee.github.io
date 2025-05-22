@@ -76,7 +76,7 @@ function signInDatabase() {
 
 async function getPosts(criteria, lastVisibleCount, callback) {
   if (sqldb) {
-    console.log(criteria);
+    //console.log(criteria);
     var where = '';
     var womenJoin = '';
     var artistsJoin = '';
@@ -155,11 +155,11 @@ async function getPosts(criteria, lastVisibleCount, callback) {
     if (criteria.type) {
       where += ` AND a.type = '${criteria.type}'`;
     }
-    console.log(criteria.love);
+    //console.log(criteria.love);
     if (criteria.love) {
       where += ` AND a.love = 1`;
     }
-    console.log(criteria.use);
+    //console.log(criteria.use);
     if (criteria.use) {
       where += ` AND a.use >= 1`;
     }
@@ -259,11 +259,11 @@ async function getPosts(criteria, lastVisibleCount, callback) {
     LIMIT ${limit}
     OFFSET ${lastVisibleCount}
     `;
-    console.log(sql);
+    //console.log(sql);
     let contents = sqldb.exec(sql);
-    console.log(contents);
+    //console.log(contents);
     if (contents[0]) {
-      console.log(contents[0].values);
+      //console.log(contents[0].values);
       callback(contents[0].values.map((p) => {
         return {
           id: p[0],
@@ -429,7 +429,7 @@ async function getAllAliases() {
 async function getAllTags() {
   var snapshot = await getDocs(query(collection(db, 'tags'), orderBy('yomi')));
   return snapshot.docs.map((t) => {
-    console.log(t.id, t.data().name);
+    //console.log(t.id, t.data().name);
     return {
       name: t.data().name,
       yomi: t.data().yomi
