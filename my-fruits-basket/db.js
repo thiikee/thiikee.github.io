@@ -1,5 +1,5 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js'
-import { getAuth, signInWithPopup, OAuthProvider, setPersistence, browserSessionPersistence, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js'
+import { getAuth, signInWithPopup, OAuthProvider, GoogleAuthProvider, setPersistence, browserSessionPersistence, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js'
 import { getFirestore, collection, query, where, orderBy, getDocs, doc, addDoc, setDoc, deleteDoc, serverTimestamp, limit, startAt, endAt, startAfter } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js'
 import { setAlbums } from './albums.js';
 import { setArtists } from './artists.js';
@@ -40,7 +40,8 @@ function signInDatabase() {
       //setPersistence(auth, browserSessionPersistence)
       //.then(() => {
       //  if (!user) {
-          const provider = new OAuthProvider('microsoft.com');
+          //const provider = new OAuthProvider('microsoft.com');
+          const provider = new GoogleAuthProvider();
           signInWithPopup(auth, provider)
           .then((result) => {
             //console.log(result);
