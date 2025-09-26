@@ -508,37 +508,7 @@
                 
                 if (targetColumn) {
                     targetColumn.appendChild(element);
-                    
-                    // 画像の読み込み完了後に高さを計算
-                    const images = element.querySelectorAll('img');
-                    if (images.length > 0) {
-                        let loadedImages = 0;
-                        const totalImages = images.length;
-                        
-                        const onImageLoad = () => {
-                            loadedImages++;
-                            if (loadedImages === totalImages) {
-                                // 全画像が読み込まれた後に高さを更新
-                                setTimeout(() => {
-                                    this.updateColumnHeight(shortestColumnIndex, element);
-                                }, 50);
-                            }
-                        };
-                        
-                        images.forEach(img => {
-                            if (img.complete) {
-                                onImageLoad();
-                            } else {
-                                img.addEventListener('load', onImageLoad);
-                                img.addEventListener('error', onImageLoad); // エラーでも処理を進める
-                            }
-                        });
-                    } else {
-                        // 画像がない場合は即座に高さを更新
-                        setTimeout(() => {
-                            this.updateColumnHeight(shortestColumnIndex, element);
-                        }, 50);
-                    }
+                    this.updateColumnHeight(shortestColumnIndex, element);
                 }
 
                 this.updateDebugIndicator();
@@ -560,17 +530,12 @@
             }
 
             updateColumnHeight(columnIndex, element) {
-                // 要素の実際の高さを取得
-                const elementHeight = element.offsetHeight;
-                if (elementHeight > 0) {
+                // 要素が DOM に追加されるまで少し待つ
+                setTimeout(() => {
+                    const elementHeight = element.offsetHeight;
                     this.columns[columnIndex] += elementHeight + 20; // gap分を追加
-                    console.log(`カラム${columnIndex}の高さ更新: +${elementHeight}px (合計: ${this.columns[columnIndex]}px)`);
-                } else {
-                    // 高さが取得できない場合は推定値を使用
-                    console.warn(`カラム${columnIndex}の高さが取得できません。推定値を使用します。`);
-                    this.columns[columnIndex] += 350; // 推定高さ
-                }
-                this.updateDebugIndicator();
+                    this.updateDebugIndicator();
+                }, 10);
             }
 
             redistributeItems() {
@@ -628,23 +593,6 @@
                     const itemCount = column ? column.children.length : 0;
                     console.log(`Column ${i}: ${itemCount} items`);
                 }
-            }
-
-            // 全アイテムをクリア
-            clearAllItems() {
-                console.log('全アイテムをクリア');
-                this.allItems = [];
-                this.columns.fill(0);
-                
-                // 全カラムを空にする
-                for (let i = 0; i < this.currentColumnCount; i++) {
-                    const column = document.querySelector(`.pinterest-column[data-column="${i}"]`);
-                    if (column) {
-                        column.innerHTML = '';
-                    }
-                }
-                
-                this.updateDebugIndicator();
             }
         }
 
@@ -848,15 +796,6 @@
                 masonryManager.redistributeItems();
             });
             document.getElementById('searchBtn').parentNode.appendChild(redistributeButton);
-
-            // デバッグ用: クリアボタン
-            const clearButton = document.createElement('button');
-            clearButton.className = 'btn btn-danger ms-2';
-            clearButton.textContent = 'クリア';
-            clearButton.addEventListener('click', () => {
-                masonryManager.clearAllItems();
-            });
-            document.getElementById('searchBtn').parentNode.appendChild(clearButton);
         }
 
         // 認証UI更新
@@ -901,20 +840,10 @@
             try {
                 document.getElementById('loadingSection').style.display = 'block';
                 
-                // 既存のアイテムをクリア
-                masonryManager.clearAllItems();
-                
                 // ダミー投稿データを生成
                 const posts = oneDriveManager.generateDummyPosts(8);
                 
                 console.log('ダミー投稿データ:', posts);
-                
-                // メインコンテンツを表示（認証をスキップ）
-                document.getElementById('authSection').style.display = 'none';
-                document.getElementById('mainContent').style.display = 'block';
-                
-                // 少し待ってからアイテムを追加（DOM更新を確保）
-                await new Promise(resolve => setTimeout(resolve, 100));
                 
                 // 各投稿の画像データを取得してカルーセルを作成
                 for (const post of posts) {
@@ -927,14 +856,13 @@
                     
                     const carouselElement = carouselManager.createCarousel(carouselData);
                     masonryManager.addItemToShortestColumn(carouselElement);
-                    
-                    // 各アイテム追加後に少し待機（レンダリング時間を確保）
-                    await new Promise(resolve => setTimeout(resolve, 100));
                 }
                 
                 document.getElementById('loadingSection').style.display = 'none';
                 
-                console.log('ダミーデータ読み込み完了');
+                // メインコンテンツを表示（認証をスキップ）
+                document.getElementById('authSection').style.display = 'none';
+                document.getElementById('mainContent').style.display = 'block';
                 
             } catch (error) {
                 console.error('ダミーデータ読み込みエラー:', error);
