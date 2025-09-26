@@ -69,10 +69,21 @@ img.firebaseui-idp-icon {
   }
 }*/
 
+.bricklayer-column-sizer {
+  width: 33.333%; /* デフォルトは3カラム */
+}
+
+@media (max-width: 992px) {
   .bricklayer-column-sizer {
-    /* divide by 3. */
-    width: 33.333%;
+    width: 50%; /* 2カラム */
   }
+}
+
+@media (max-width: 768px) {
+  .bricklayer-column-sizer {
+    width: 100%; /* 1カラム */
+  }
+}
 
 .select-pure__options {
   max-height: 360px;

@@ -9,11 +9,16 @@ var inProgress = false;
 $(() => {
   $('#fb-search-posts-button').on('click', {reset: true}, searchPosts);
   $('#fb-clear-posts-button').on('click', false, reset);
+  $('#fb-debug-button').on('click', false, debug);
   $('#fb-read-next-button').on('click', {reset: false}, searchPosts);
   $('#fb-add-post-button').on('click', false, addPost);
   $(document).on('click', '.fb-set-opacity',toggleOpacity);
   $(document).on('click', '.fb-back-to-top', backToTop);
 });
+
+function debug() {
+  alert('debug');
+}
 
 function searchPosts(event) {
   //if (inProgress) return;
