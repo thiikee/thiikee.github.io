@@ -8,7 +8,7 @@
 
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
+
   <!-- Font Awesome Icons -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 
@@ -16,8 +16,8 @@
   <style>
     .pinterest-container {
       display: grid;
-      gap: 10px;
-      padding: 10px;
+      gap: 20px;
+      padding: 20px;
     }
 
     /* デスクトップ: 3列 */
@@ -44,86 +44,86 @@
     .pinterest-column {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 20px;
     }
 
     /* tags-input風のスタイル */
     .tags-container {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 4px;
-        align-items: center;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      align-items: center;
     }
 
     .tags-container .badge {
-        font-size: 0.75rem;
-        font-weight: 500;
-        padding: 0.35em 0.65em;
-        border-radius: 0.5rem;
-        display: inline-flex;
-        align-items: center;
-        transition: all 0.2s ease;
+      font-size: 0.75rem;
+      font-weight: 500;
+      padding: 0.35em 0.65em;
+      border-radius: 0.5rem;
+      display: inline-flex;
+      align-items: center;
+      transition: all 0.2s ease;
     }
 
     .tags-container .badge:hover {
-        transform: scale(1.05);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+      transform: scale(1.05);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
     }
 
     .tags-container .badge i {
-        font-size: 0.7rem;
+      font-size: 0.7rem;
     }
 
     /* タイプ別カスタムカラー */
     .badge.type-photo {
-        background: linear-gradient(45deg, #28a745, #20c997) !important;
-        color: white;
+      background: linear-gradient(45deg, #28a745, #20c997) !important;
+      color: white;
     }
 
     .badge.type-video {
-        background: linear-gradient(45deg, #dc3545, #e83e8c) !important;
-        color: white;
+      background: linear-gradient(45deg, #dc3545, #e83e8c) !important;
+      color: white;
     }
 
     .badge.type-illus {
-        background: linear-gradient(45deg, #ffc107, #fd7e14) !important;
-        color: #212529;
+      background: linear-gradient(45deg, #ffc107, #fd7e14) !important;
+      color: #212529;
     }
 
     /* 画像枚数別カラー */
     .badge.images-single {
-        background: linear-gradient(45deg, #6c757d, #adb5bd) !important;
-        color: white;
+      background: linear-gradient(45deg, #6c757d, #adb5bd) !important;
+      color: white;
     }
 
     .badge.images-few {
-        background: linear-gradient(45deg, #17a2b8, #6610f2) !important;
-        color: white;
+      background: linear-gradient(45deg, #17a2b8, #6610f2) !important;
+      color: white;
     }
 
     .badge.images-many {
-        background: linear-gradient(45deg, #343a40, #495057) !important;
-        color: white;
+      background: linear-gradient(45deg, #343a40, #495057) !important;
+      color: white;
     }
 
     /* 日付バッジ */
     .badge.date-badge {
-        background: linear-gradient(45deg, #f8f9fa, #e9ecef) !important;
-        color: #495057;
-        border: 1px solid #dee2e6;
+      background: linear-gradient(45deg, #f8f9fa, #e9ecef) !important;
+      color: #495057;
+      border: 1px solid #dee2e6;
     }
 
-    /*.carousel-item img {
-            height: 300px;
-            object-fit: cover;
-            transition: object-fit 0.3s ease;
-        }*/
+    .carousel-item img {
+      height: 300px;
+      object-fit: cover;
+      transition: object-fit 0.3s ease;
+    }
 
     /* 縦横比に応じてカルーセルの高さを調整 */
-    /*.carousel-inner {
-            min-height: 200px;
-            max-height: 500px;
-        }*/
+    .carousel-inner {
+      min-height: 200px;
+      max-height: 500px;
+    }
 
     /* パノラマ画像用の特別スタイル */
     .carousel-item img[src*="800x300"] {
@@ -235,7 +235,7 @@
     </div>
   </nav>
 
-  <div class="container-fluid px-0">
+  <div class="container-fluid">
     <!-- 認証セクション -->
     <div id="authSection" class="auth-section">
       <h3>認証が必要です</h3>
@@ -450,8 +450,7 @@
         ];
 
         return imageIds.map((id, index) => {
-          //const ratio = aspectRatios[index % aspectRatios.length];
-          const ratio = aspectRatios[Math.floor(Math.random() * aspectRatios.length)];
+          const ratio = aspectRatios[index % aspectRatios.length];
           return {
             id: id,
             name: `${ratio.name}_${id}.jpg`,
@@ -724,31 +723,31 @@
     class CarouselManager {
       // タイプ別の色クラスを取得
       getTypeClass(type) {
-          return `type-${type}`;
+        return `type-${type}`;
       }
 
       // 画像枚数別の色クラスを取得
       getImageCountClass(count) {
-          if (count === 1) return 'images-single';
-          if (count <= 3) return 'images-few';
-          return 'images-many';
+        if (count === 1) return 'images-single';
+        if (count <= 3) return 'images-few';
+        return 'images-many';
       }
 
       // アイコンを取得
       getTypeIcon(type) {
-          const icons = {
-              'photo': 'fas fa-camera',
-              'video': 'fas fa-video',
-              'illus': 'fas fa-palette'
-          };
-          return icons[type] || 'fas fa-tag';
+        const icons = {
+          'photo': 'fas fa-camera',
+          'video': 'fas fa-video',
+          'illus': 'fas fa-palette'
+        };
+        return icons[type] || 'fas fa-tag';
       }
 
       createCarousel(carouselItem) {
         const carouselId = `carousel-${carouselItem.id}`;
 
         const card = document.createElement('div');
-        card.className = 'card mb-1';
+        card.className = 'card mb-4';
 
         // カルーセルインジケーターを追加（画像が2枚以上の場合）
         const indicators = carouselItem.images.length > 1 ? `
@@ -919,8 +918,7 @@
 
       // さらに読み込むボタン
       document.getElementById('loadMoreBtn').addEventListener('click', async () => {
-        //await loadPosts(true);
-        await loadDummyPosts(true);
+        await loadPosts(true);
       });
 
       // テスト用: ダミーデータ読み込みボタンを追加
@@ -928,7 +926,7 @@
       testButton.className = 'btn btn-warning ms-2';
       testButton.textContent = 'ダミーデータでテスト';
       testButton.addEventListener('click', async () => {
-        await loadDummyPosts(false);
+        await loadDummyPosts();
       });
       document.getElementById('searchBtn').parentNode.appendChild(testButton);
 
@@ -986,9 +984,6 @@
 
           const carouselElement = carouselManager.createCarousel(carouselData);
           masonryManager.addItemToShortestColumn(carouselElement);
-
-          // 各アイテム追加後に少し待機（レンダリング時間を確保）
-          await new Promise(resolve => setTimeout(resolve, 500));
         }
 
         document.getElementById('loadingSection').style.display = 'none';
@@ -1001,14 +996,12 @@
     }
 
     // ダミーデータ読み込み（認証不要でテスト可能）
-    async function loadDummyPosts(loadMore) {
+    async function loadDummyPosts() {
       try {
         document.getElementById('loadingSection').style.display = 'block';
 
         // 既存のアイテムをクリア
-        if (!loadMore) {
-          masonryManager.clearAllItems();
-        }
+        masonryManager.clearAllItems();
 
         // ダミー投稿データを生成
         const posts = oneDriveManager.generateDummyPosts(8);
@@ -1020,7 +1013,7 @@
         document.getElementById('mainContent').style.display = 'block';
 
         // 少し待ってからアイテムを追加（DOM更新を確保）
-        //await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         // 各投稿の画像データを取得してカルーセルを作成
         for (const post of posts) {
@@ -1035,7 +1028,7 @@
           masonryManager.addItemToShortestColumn(carouselElement);
 
           // 各アイテム追加後に少し待機（レンダリング時間を確保）
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise(resolve => setTimeout(resolve, 100));
         }
 
         document.getElementById('loadingSection').style.display = 'none';
