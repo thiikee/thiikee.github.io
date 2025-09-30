@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pinterest風画像閲覧ツール</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <style>
+        .pinterest-container {
+            display: grid;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        /* デスクトップ: 3列 */
+        @media (min-width: 992px) {
+            .pinterest-container {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        /* タブレット: 2列 */
+        @media (min-width: 768px) and (max-width: 991px) {
+            .pinterest-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* モバイル: 1列 */
+        @media (max-width: 767px) {
+            .pinterest-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .pinterest-column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .carousel-item img {
+            height: 300px;
+            object-fit: cover;
+            transition: object-fit 0.3s ease;
+        }
+
+        /* 縦横比に応じてカルーセルの高さを調整 */
+        .carousel-inner {
+            min-height: 200px;
+            max-height: 500px;
+        }
+
+        /* パノラマ画像用の特別スタイル */
+        .carousel-item img[src*="800x300"] {
+            height: 200px;
+        }
+
+        /* 超縦長画像用の特別スタイル */
+        .carousel-item img[src*="400x800"] {
+            height: 400px;
+        }
+
+        /* ホバー時に contain に切り替えて全体を表示 */
+        .carousel-item img:hover {
+            object-fit: contain;
+            cursor: pointer;
+        }
+
+        .carousel-indicators {
+            margin-bottom: 10px;
+        }
+
+        .carousel-indicators button {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin: 0 3px;
+        }
+
+        .carousel-caption {
+            background: rgba(0,0,0,0.7);
+            border-radius: 5px;
+            padding: 5px 10px;
+            font-size: 0.8rem;
+        }
+
+        .carousel-caption small {
+            display: block;
+            font-size: 0.7rem;
+            opacity: 0.9;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            transition: transform 0.2s ease-in-out;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        /* 異なる縦横比のカードに対してより柔軟な高さ調整 */
+        .pinterest-column .card {
+            break-inside: avoid;
+            margin-bottom: 20px;
+        }
+
+        .auth-section {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .load-more-container {
+            text-align: center;
+            margin: 40px 0;
+        }
+
+        /* デバッグ用: カラム表示スタイル */
+        .column-debug {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 1000;
+        }
+
+        .pinterest-column {
+            border: 1px dashed rgba(0,0,0,0.1);
+            min-height: 50px;
+        }
+
+        .pinterest-column:empty::before {
+            content: 'Empty Column';
+            color: #ccc;
+            font-style: italic;
+            padding: 20px;
+            display: block;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- ヘッダー -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">Pinterest風ギャラリー</a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text" id="userInfo"></span>
+                <button class="btn btn-outline-light ms-2" id="logoutBtn" style="display: none;">ログアウト</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <!-- 認証セクション -->
+        <div id="authSection" class="auth-section">
+            <h3>認証が必要です</h3>
+            <p>FirestoreとOneDriveにアクセスするために認証を行ってください。</p>
+            <button class="btn btn-primary me-2" id="firebaseAuthBtn">Firebase認証</button>
+            <button class="btn btn-success me-2" id="onedriveAuthBtn" disabled>OneDrive認証</button>
+            <button class="btn btn-info" id="searchBtn" disabled>検索開始</button>
+        </div>
+
+        <!-- メインコンテンツ -->
+        <div id="mainContent" style="display: none;">
+            <!-- Pinterest風グリッドコンテナー -->
+            <div id="pinterestContainer" class="pinterest-container">
+                <!-- カラムは動的に生成される -->
+            </div>
+
+            <!-- さらに読み込むボタン -->
+            <div class="load-more-container">
+                <button class="btn btn-primary" id="loadMoreBtn">さらに読み込む</button>
+            </div>
+        </div>
+
+        <!-- ローディング表示 -->
+        <div id="loadingSection" class="loading" style="display: none;">
+            <div class="spinner-border" role="status"></div>
+            <p>データを読み込み中...</p>
+        </div>
+    </div>
+
+    <!-- 編集モーダル -->
+    <div class="modal fade" id="editModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">投稿編集</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- タイトル編集 -->
+                    <div class="mb-3">
+                        <label class="form-label">タイトル</label>
+                        <input type="text" class="form-control" id="editTitle">
+                    </div>
+                    
+                    <!-- 画像管理 -->
+                    <div class="mb-3">
+                        <label class="form-label">画像</label>
+                        <div id="imageList" class="row"></div>
+                        <button class="btn btn-success mt-2" id="addImageBtn">OneDriveから追加</button>
+                    </div>
+                    
+                    <!-- タイプ選択 -->
+                    <div class="mb-3">
+                        <label class="form-label">タイプ</label>
+                        <select class="form-select" id="editType">
+                            <option value="photo">Photo</option>
+                            <option value="video">Video</option>
+                            <option value="illus">Illustration</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                    <button type="button" class="btn btn-primary" id="saveChangesBtn">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-auth-compat.js"></script>
+    
+    <!-- Microsoft Graph SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.0/lib/msal-browser.min.js"></script>
+    
+    <!-- 設定ファイル読み込み -->
+    <script src="config/config.js"></script>
+    
+    <script>
+        // グローバル変数
+        let authManager, firestoreManager, oneDriveManager, masonryManager, carouselManager, modalManager;
+        let isFirebaseAuthenticated = false;
+        let isOneDriveAuthenticated = false;
+
+        // 設定ファイルから設定を取得
+        const firebaseConfig = window.APP_CONFIG.firebase;
+        const oneDriveConfig = window.APP_CONFIG.oneDrive;
+
+        // 認証管理クラス
+        class AuthManager {
+            constructor() {
+                // Firebase初期化
+                firebase.initializeApp(firebaseConfig);
+                this.auth = firebase.auth();
+                
+                // MSAL初期化
+                this.msalInstance = new msal.PublicClientApplication({
+                    auth: oneDriveConfig
+                });
+            }
+
+            async signInWithFirebase() {
+                try {
+                    const provider = new firebase.auth.GoogleAuthProvider();
+                    const result = await this.auth.signInWithPopup(provider);
+                    console.log('Firebase認証成功:', result.user.email);
+                    return result.user;
+                } catch (error) {
+                    console.error('Firebase認証エラー:', error);
+                    throw error;
+                }
+            }
+
+            async signInWithOneDrive() {
+                try {
+                    await this.msalInstance.initialize();
+                    const loginRequest = {
+                        scopes: window.APP_CONFIG.oneDrive.scopes
+                    };
+                    const result = await this.msalInstance.loginPopup(loginRequest);
+                    console.log('OneDrive認証成功:', result.account.username);
+                    return result;
+                } catch (error) {
+                    console.error('OneDrive認証エラー:', error);
+                    throw error;
+                }
+            }
+        }
+
+        // Firestore管理クラス
+        class FirestoreManager {
+            constructor() {
+                this.db = firebase.firestore();
+                this.lastDocument = null;
+                this.pageSize = window.APP_CONFIG.app.pageSize;
+            }
+
+            async getPosts(isLoadMore = false) {
+                try {
+                    let query = this.db.collection('posts')
+                        .orderBy('createdAt', 'desc')
+                        .limit(this.pageSize);
+
+                    if (isLoadMore && this.lastDocument) {
+                        query = query.startAfter(this.lastDocument);
+                    }
+
+                    const snapshot = await query.get();
+                    
+                    if (!snapshot.empty) {
+                        this.lastDocument = snapshot.docs[snapshot.docs.length - 1];
+                    }
+
+                    return snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
+                } catch (error) {
+                    console.error('Firestore取得エラー:', error);
+                    throw error;
+                }
+            }
+
+            async updatePost(postId, updateData) {
+                try {
+                    await this.db.collection('posts').doc(postId).update(updateData);
+                    console.log('投稿更新成功:', postId);
+                } catch (error) {
+                    console.error('投稿更新エラー:', error);
+                    throw error;
+                }
+            }
+        }
+
+        // OneDrive管理クラス（モックアップ版）
+        class OneDriveManager {
+            constructor() {
+                this.accessToken = null;
+            }
+
+            async setAccessToken(token) {
+                this.accessToken = token;
+            }
+
+            async getImagesFromIds(imageIds) {
+                // 実装時は実際のMicrosoft Graph APIを呼び出し
+                // ここではダミーデータを返す（複数画像対応）
+                return imageIds.map((id, index) => ({
+                    id: id,
+                    name: `Image_${id}.jpg`,
+                    url: `https://picsum.photos/600/800?random=${id}`,
+                    thumbnail: `https://picsum.photos/400/600?random=${id}`
+                }));
+            }
+
+            // テスト用: 様々な縦横比の画像を生成
+            generateVariousAspectRatioImages(imageIds) {
+                const aspectRatios = [
+                    { width: 400, height: 300, name: "横長(4:3)" },     // 横長
+                    { width: 400, height: 600, name: "縦長(2:3)" },     // 縦長
+                    { width: 400, height: 400, name: "正方形(1:1)" },   // 正方形
+                    { width: 600, height: 300, name: "パノラマ(2:1)" }, // パノラマ
+                    { width: 400, height: 800, name: "超縦長(1:2)" },   // 超縦長
+                    { width: 800, height: 300, name: "超横長(8:3)" },   // 超横長
+                    { width: 400, height: 500, name: "やや縦長(4:5)" }, // やや縦長
+                    { width: 500, height: 400, name: "やや横長(5:4)" }  // やや横長
+                ];
+
+                return imageIds.map((id, index) => {
+                    const ratio = aspectRatios[index % aspectRatios.length];
+                    return {
+                        id: id,
+                        name: `${ratio.name}_${id}.jpg`,
+                        url: `https://picsum.photos/${ratio.width}/${ratio.height}?random=${id}`,
+                        thumbnail: `https://picsum.photos/${ratio.width}/${ratio.height}?random=${id}`,
+                        aspectRatio: ratio.width / ratio.height,
+                        dimensions: `${ratio.width}×${ratio.height}`
+                    };
+                });
+            }
+
+            // テスト用: ダミー投稿データ生成（複数画像含む）
+            generateDummyPosts(count = 10) {
+                const posts = [];
+                const types = ['photo', 'video', 'illus'];
+                
+                for (let i = 1; i <= count; i++) {
+                    // ランダムに1-5枚の画像を持つ投稿を生成
+                    const imageCount = Math.floor(Math.random() * 5) + 1;
+                    const imageIds = [];
+                    
+                    for (let j = 1; j <= imageCount; j++) {
+                        imageIds.push(`post${i}_img${j}_${Date.now()}_${Math.random()}`);
+                    }
+                    
+                    posts.push({
+                        id: `dummy_post_${i}`,
+                        title: `様々な比率テスト ${i} (${imageCount}枚)`,
+                        imageIds: imageIds,
+                        type: types[Math.floor(Math.random() * types.length)],
+                        createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000), // 過去30日間のランダムな日付
+                        updatedAt: new Date()
+                    });
+                }
+                
+                return posts;
+            }
+        }
+
+        // マゾナリー配置管理クラス
+        class MasonryManager {
+            constructor() {
+                this.columns = [];
+                this.currentColumnCount = this.getColumnCount();
+                this.allItems = []; // 全てのアイテムを記録
+                this.initializeColumns();
+                this.setupResizeListener();
+                this.createDebugIndicator();
+            }
+
+            getColumnCount() {
+                const breakpoints = window.APP_CONFIG.ui.breakpoints;
+                if (window.innerWidth >= breakpoints.desktop) return 3;
+                if (window.innerWidth >= breakpoints.tablet) return 2;
+                return 1;
+            }
+
+            // デバッグインジケータを作成
+            createDebugIndicator() {
+                const debugDiv = document.createElement('div');
+                debugDiv.id = 'columnDebug';
+                debugDiv.className = 'column-debug';
+                document.body.appendChild(debugDiv);
+                this.updateDebugIndicator();
+            }
+
+            // デバッグインジケータを更新
+            updateDebugIndicator() {
+                const debugDiv = document.getElementById('columnDebug');
+                if (debugDiv) {
+                    debugDiv.innerHTML = `
+                        カラム数: ${this.currentColumnCount}<br>
+                        画面幅: ${window.innerWidth}px<br>
+                        アイテム数: ${this.allItems.length}<br>
+                        カラム高さ: [${this.columns.map(h => Math.round(h)).join(', ')}]
+                    `;
+                }
+            }
+
+            // カラムを初期化
+            initializeColumns() {
+                this.createColumns(this.currentColumnCount);
+            }
+
+            // 指定された数のカラムを作成
+            createColumns(count) {
+                const container = document.getElementById('pinterestContainer');
+                container.innerHTML = ''; // 既存のカラムをクリア
+                
+                this.columns = new Array(count).fill(0);
+                
+                for (let i = 0; i < count; i++) {
+                    const column = document.createElement('div');
+                    column.className = 'pinterest-column';
+                    column.setAttribute('data-column', i);
+                    container.appendChild(column);
+                }
+
+                this.updateDebugIndicator();
+            }
+
+            setupResizeListener() {
+                let resizeTimeout;
+                window.addEventListener('resize', () => {
+                    clearTimeout(resizeTimeout);
+                    resizeTimeout = setTimeout(() => {
+                        const newColumnCount = this.getColumnCount();
+                        if (newColumnCount !== this.currentColumnCount) {
+                            console.log(`カラム数変更: ${this.currentColumnCount} → ${newColumnCount}`);
+                            this.currentColumnCount = newColumnCount;
+                            this.redistributeItems();
+                        }
+                        this.updateDebugIndicator();
+                    }, 250); // デバウンス処理
+                });
+            }
+
+            addItemToShortestColumn(element) {
+                // アイテムを記録
+                this.allItems.push(element);
+                
+                const shortestColumnIndex = this.getShortestColumnIndex();
+                const targetColumn = document.querySelector(
+                    `.pinterest-column[data-column="${shortestColumnIndex}"]`
+                );
+                
+                if (targetColumn) {
+                    targetColumn.appendChild(element);
+                    this.updateColumnHeight(shortestColumnIndex, element);
+                }
+
+                this.updateDebugIndicator();
+            }
+
+            getShortestColumnIndex() {
+                const visibleColumns = this.currentColumnCount;
+                let minHeight = Infinity;
+                let minIndex = 0;
+
+                for (let i = 0; i < visibleColumns; i++) {
+                    if (this.columns[i] < minHeight) {
+                        minHeight = this.columns[i];
+                        minIndex = i;
+                    }
+                }
+
+                return minIndex;
+            }
+
+            updateColumnHeight(columnIndex, element) {
+                // 要素が DOM に追加されるまで少し待つ
+                setTimeout(() => {
+                    const elementHeight = element.offsetHeight;
+                    this.columns[columnIndex] += elementHeight + 20; // gap分を追加
+                    this.updateDebugIndicator();
+                }, 10);
+            }
+
+            redistributeItems() {
+                console.log(`再配置開始: ${this.allItems.length}個のアイテム`);
+                
+                // 新しいカラム数でカラムを再作成
+                this.createColumns(this.currentColumnCount);
+                
+                // 全てのアイテムを再配置
+                this.allItems.forEach((item, index) => {
+                    const shortestColumnIndex = this.getShortestColumnIndex();
+                    const targetColumn = document.querySelector(
+                        `.pinterest-column[data-column="${shortestColumnIndex}"]`
+                    );
+                    
+                    if (targetColumn) {
+                        targetColumn.appendChild(item);
+                        // 高さ計算は簡易的に（正確な計算は重いため）
+                        this.columns[shortestColumnIndex] += 350; // 推定高さ
+                    }
+                });
+                
+                // 実際の高さで再計算（少し遅れて実行）
+                setTimeout(() => {
+                    this.recalculateColumnHeights();
+                }, 100);
+            }
+
+            // カラムの実際の高さを再計算
+            recalculateColumnHeights() {
+                this.columns.fill(0);
+                
+                for (let i = 0; i < this.currentColumnCount; i++) {
+                    const column = document.querySelector(`.pinterest-column[data-column="${i}"]`);
+                    if (column) {
+                        this.columns[i] = column.scrollHeight;
+                    }
+                }
+                
+                this.updateDebugIndicator();
+                console.log('カラム高さ再計算完了:', this.columns);
+            }
+
+            // デバッグ用: 現在の状態を出力
+            debugStatus() {
+                console.log('=== Masonry Debug Status ===');
+                console.log('Current column count:', this.currentColumnCount);
+                console.log('Column heights:', this.columns);
+                console.log('Total items:', this.allItems.length);
+                console.log('Window width:', window.innerWidth);
+                
+                // 各カラムのアイテム数も確認
+                for (let i = 0; i < this.currentColumnCount; i++) {
+                    const column = document.querySelector(`.pinterest-column[data-column="${i}"]`);
+                    const itemCount = column ? column.children.length : 0;
+                    console.log(`Column ${i}: ${itemCount} items`);
+                }
+            }
+        }
+
+        // カルーセル管理クラス
+        class CarouselManager {
+            createCarousel(carouselItem) {
+                const carouselId = `carousel-${carouselItem.id}`;
+                
+                const card = document.createElement('div');
+                card.className = 'card mb-4';
+                
+                // カルーセルインジケーターを追加（画像が2枚以上の場合）
+                const indicators = carouselItem.images.length > 1 ? `
+                    <div class="carousel-indicators">
+                        ${carouselItem.images.map((_, index) => `
+                            <button type="button" data-bs-target="#${carouselId}" data-bs-slide-to="${index}" 
+                                    ${index === 0 ? 'class="active" aria-current="true"' : ''} 
+                                    aria-label="Slide ${index + 1}"></button>
+                        `).join('')}
+                    </div>
+                ` : '';
+
+                card.innerHTML = `
+                    <div id="${carouselId}" class="carousel slide" data-bs-ride="false">
+                        ${indicators}
+                        <div class="carousel-inner">
+                            ${carouselItem.images.map((image, index) => `
+                                <div class="carousel-item ${index === 0 ? 'active' : ''}">
+                                    <img src="${image.thumbnail}" class="d-block w-100" alt="${image.name}">
+                                    <div class="carousel-caption d-none d-md-block">
+                                        <p class="mb-0">${image.name}</p>
+                                        <small>比率: ${image.aspectRatio?.toFixed(2)} (${image.dimensions})</small>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        ${carouselItem.images.length > 1 ? `
+                            <button class="carousel-control-prev" type="button" data-bs-target="#${carouselId}" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">前へ</span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#${carouselId}" data-bs-slide="next">
+                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">次へ</span>
+                            </button>
+                        ` : ''}
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title">${carouselItem.title}</h6>
+                        <p class="card-text">
+                            <small class="text-muted">Type: ${carouselItem.type}</small><br>
+                            <small class="text-muted">Images: ${carouselItem.images.length}枚</small><br>
+                            <small class="text-muted">Created: ${new Date(carouselItem.createdAt).toLocaleDateString('ja-JP')}</small>
+                        </p>
+                        <button class="btn btn-primary btn-sm edit-btn" data-post-id="${carouselItem.id}">
+                            Edit
+                        </button>
+                    </div>
+                `;
+
+                // Editボタンのイベントリスナー
+                card.querySelector('.edit-btn').addEventListener('click', () => {
+                    modalManager.openModal(carouselItem.id, carouselItem);
+                });
+
+                return card;
+            }
+        }
+
+        // モーダル管理クラス（簡易版）
+        class ModalManager {
+            constructor() {
+                this.currentPost = null;
+            }
+
+            openModal(postId, postData) {
+                this.currentPost = postData;
+                
+                // フォームにデータを設定
+                document.getElementById('editTitle').value = postData.title;
+                document.getElementById('editType').value = postData.type;
+                
+                // 画像リストを表示（簡易版）
+                const imageList = document.getElementById('imageList');
+                imageList.innerHTML = postData.images.map(image => `
+                    <div class="col-md-4 mb-2">
+                        <img src="${image.thumbnail}" class="img-fluid" alt="${image.name}">
+                        <p class="small">${image.name}</p>
+                    </div>
+                `).join('');
+
+                // モーダルを表示
+                new bootstrap.Modal(document.getElementById('editModal')).show();
+            }
+        }
+
+        // アプリケーション初期化
+        async function initializeApp() {
+            // 設定ファイルの読み込み確認
+            if (!window.APP_CONFIG) {
+                alert('設定ファイル (config/config.js) が読み込まれていません。\n' +
+                      'config/config.sample.js をコピーして config/config.js を作成し、\n' +
+                      '適切な設定値を入力してください。');
+                return;
+            }
+
+            // 必須設定項目のチェック
+            const requiredFields = [
+                'firebase.apiKey',
+                'firebase.projectId', 
+                'oneDrive.clientId'
+            ];
+
+            for (const field of requiredFields) {
+                const keys = field.split('.');
+                let value = window.APP_CONFIG;
+                for (const key of keys) {
+                    value = value[key];
+                    if (!value) break;
+                }
+                
+                if (!value || value.includes('your-') || value.includes('XXXX')) {
+                    alert(`設定ファイルの ${field} が設定されていません。\n` +
+                          'config/config.js で適切な値を設定してください。');
+                    return;
+                }
+            }
+
+            console.log('設定ファイル読み込み完了:', window.APP_CONFIG);
+
+            authManager = new AuthManager();
+            firestoreManager = new FirestoreManager();
+            oneDriveManager = new OneDriveManager();
+            masonryManager = new MasonryManager();
+            carouselManager = new CarouselManager();
+            modalManager = new ModalManager();
+
+            setupEventListeners();
+        }
+
+        // イベントリスナー設定
+        function setupEventListeners() {
+            // Firebase認証ボタン
+            document.getElementById('firebaseAuthBtn').addEventListener('click', async () => {
+                try {
+                    await authManager.signInWithFirebase();
+                    isFirebaseAuthenticated = true;
+                    document.getElementById('onedriveAuthBtn').disabled = false;
+                    updateAuthUI();
+                } catch (error) {
+                    alert('Firebase認証に失敗しました: ' + error.message);
+                }
+            });
+
+            // OneDrive認証ボタン
+            document.getElementById('onedriveAuthBtn').addEventListener('click', async () => {
+                try {
+                    const result = await authManager.signInWithOneDrive();
+                    await oneDriveManager.setAccessToken(result.accessToken);
+                    isOneDriveAuthenticated = true;
+                    document.getElementById('searchBtn').disabled = false;
+                    updateAuthUI();
+                } catch (error) {
+                    alert('OneDrive認証に失敗しました: ' + error.message);
+                }
+            });
+
+            // 検索ボタン
+            document.getElementById('searchBtn').addEventListener('click', async () => {
+                await loadPosts(false);
+            });
+
+            // さらに読み込むボタン
+            document.getElementById('loadMoreBtn').addEventListener('click', async () => {
+                await loadPosts(true);
+            });
+
+            // テスト用: ダミーデータ読み込みボタンを追加
+            const testButton = document.createElement('button');
+            testButton.className = 'btn btn-warning ms-2';
+            testButton.textContent = 'ダミーデータでテスト';
+            testButton.addEventListener('click', async () => {
+                await loadDummyPosts();
+            });
+            document.getElementById('searchBtn').parentNode.appendChild(testButton);
+
+            // デバッグ用: レイアウト状態確認ボタン
+            const debugButton = document.createElement('button');
+            debugButton.className = 'btn btn-info ms-2';
+            debugButton.textContent = 'レイアウト状態確認';
+            debugButton.addEventListener('click', () => {
+                masonryManager.debugStatus();
+            });
+            document.getElementById('searchBtn').parentNode.appendChild(debugButton);
+
+            // デバッグ用: 強制再配置ボタン
+            const redistributeButton = document.createElement('button');
+            redistributeButton.className = 'btn btn-secondary ms-2';
+            redistributeButton.textContent = '強制再配置';
+            redistributeButton.addEventListener('click', () => {
+                masonryManager.redistributeItems();
+            });
+            document.getElementById('searchBtn').parentNode.appendChild(redistributeButton);
+        }
+
+        // 認証UI更新
+        function updateAuthUI() {
+            if (isFirebaseAuthenticated && isOneDriveAuthenticated) {
+                document.getElementById('authSection').style.display = 'none';
+                document.getElementById('mainContent').style.display = 'block';
+            }
+        }
+
+        // 投稿データ読み込み
+        async function loadPosts(isLoadMore) {
+            try {
+                document.getElementById('loadingSection').style.display = 'block';
+                
+                // Firestoreから投稿データを取得
+                const posts = await firestoreManager.getPosts(isLoadMore);
+                
+                // 各投稿の画像データを取得してカルーセルを作成
+                for (const post of posts) {
+                    const images = await oneDriveManager.getImagesFromIds(post.imageIds);
+                    const carouselData = {
+                        ...post,
+                        images: images
+                    };
+                    
+                    const carouselElement = carouselManager.createCarousel(carouselData);
+                    masonryManager.addItemToShortestColumn(carouselElement);
+                }
+                
+                document.getElementById('loadingSection').style.display = 'none';
+                
+            } catch (error) {
+                console.error('投稿読み込みエラー:', error);
+                alert('データの読み込みに失敗しました: ' + error.message);
+                document.getElementById('loadingSection').style.display = 'none';
+            }
+        }
+
+        // ダミーデータ読み込み（認証不要でテスト可能）
+        async function loadDummyPosts() {
+            try {
+                document.getElementById('loadingSection').style.display = 'block';
+                
+                // ダミー投稿データを生成
+                const posts = oneDriveManager.generateDummyPosts(8);
+                
+                console.log('ダミー投稿データ:', posts);
+                
+                // 各投稿の画像データを取得してカルーセルを作成
+                for (const post of posts) {
+                    // 様々な縦横比の画像を生成
+                    const images = oneDriveManager.generateVariousAspectRatioImages(post.imageIds);
+                    const carouselData = {
+                        ...post,
+                        images: images
+                    };
+                    
+                    const carouselElement = carouselManager.createCarousel(carouselData);
+                    masonryManager.addItemToShortestColumn(carouselElement);
+                }
+                
+                document.getElementById('loadingSection').style.display = 'none';
+                
+                // メインコンテンツを表示（認証をスキップ）
+                document.getElementById('authSection').style.display = 'none';
+                document.getElementById('mainContent').style.display = 'block';
+                
+            } catch (error) {
+                console.error('ダミーデータ読み込みエラー:', error);
+                alert('ダミーデータの読み込みに失敗しました: ' + error.message);
+                document.getElementById('loadingSection').style.display = 'none';
+            }
+        }
+
+        // アプリケーション開始
+        document.addEventListener('DOMContentLoaded', initializeApp);
+    </script>
+</body>
+</html>
