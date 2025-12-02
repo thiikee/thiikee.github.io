@@ -93,6 +93,8 @@ function openEditDialog(post) {
   createWomenSelectEdit(post.women);
   createArtistsSelectEdit(post.artists);
   createTagsSelectEdit(post.tags);
+  // m3u8
+  $editDialog.find('#fb-post-m3u8').val(post.m3u8);
   // Comment
   $editDialog.find('#fb-post-comment').val(post.comment);
   // Alt
@@ -199,6 +201,7 @@ function pickPost(event) {
     artists: artistsSelectEdit.value(),
     tags: tagsSelectEdit.value(),
     albums: albumsSelectEdit.value(),
+    m3u8: $('#fb-post-m3u8').val(),
     comment: $('#fb-post-comment').val(),
     cover: $('#fb-post-cover').val(),
     use: $('#fb-post-use').val(),

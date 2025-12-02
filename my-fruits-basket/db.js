@@ -270,20 +270,21 @@ async function getPosts(criteria, lastVisibleCount, callback) {
           id: p[0],
           title: p[1],
           type: p[2],
-          movie: p[16]? JSON.parse(p[16])[0] : null,
-          imageIds: JSON.parse(p[15]),
+          movie: p[17]? JSON.parse(p[17])[0] : null,
+          imageIds: JSON.parse(p[16]),
           cover: p[4],
-          albums:JSON.parse(p[14]),
-          women: JSON.parse(p[11]),
-          artists: JSON.parse(p[12]),
-          tags: JSON.parse(p[13]),
+          albums:JSON.parse(p[15]),
+          women: JSON.parse(p[12]),
+          artists: JSON.parse(p[13]),
+          tags: JSON.parse(p[14]),
           love: p[3],
           comment: p[5],
           createdAt: p[7]? p[7] : null,
           updatedAt: p[8]? p[8] : null,
           discarded: p[6],
           use: p[9],
-          have: p[10]
+          have: p[10],
+          m3u8: p[11]
         }
       }));
     } else {
@@ -454,6 +455,7 @@ async function savePost(post) {
     tags: post.tags,
     have: post.have,
     love: post.love,
+    m3u8: post.m3u8,
     comment: post.comment,
     createdAt: post.createdAt ? post.createdAt : serverTimestamp(),
     updatedAt: serverTimestamp(),
