@@ -153,8 +153,8 @@ async function getPosts(criteria, lastVisibleCount, callback) {
     if (criteria.title) {
       where += ` AND a.title LIKE '%${criteria.title}%'`;
     }
-    if (criteria.type) {
-      where += ` AND a.type = '${criteria.type}'`;
+    if (criteria.type && criteria.type.length > 0) {
+      where += ` AND a.type IN ('${criteria.type.map(t => t).join("', '")}')`;
     }
     //console.log(criteria.love);
     if (criteria.love) {

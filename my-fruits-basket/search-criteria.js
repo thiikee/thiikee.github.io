@@ -7,7 +7,6 @@ export { getSearchCriteria };
 const $love = $('#fb-search-love');
 const $use = $('#fb-search-use');
 const $title = $('#fb-search-title');
-const $type = $('#fb-search-type');
 const $album = $('#fb-search-album');
 const $keeping = $('#fb-search-include-keeping');
 const $discarded = $('#fb-search-include-discarded');
@@ -32,7 +31,7 @@ var initCriteria = false;
 function setupCriteria() {
   if (initCriteria) return;
   if (getWomen().length == 0) return;
-  createTypesSelect();
+  //createTypesSelect();
   createAlbumsSelect();
   createWomenSelectSearch();
   createArtistsSelectSearch();
@@ -46,7 +45,7 @@ function getSearchCriteria() {
     love: $love.val(),
     use: $use.prop('checked'),
     title: $title.val(),
-    type: $type.val(),
+    type: Array.from(document.querySelectorAll('input[name="fb-search-type"]:checked')).map(el => el.value),
     album: $album.val(),
     women: womenSelectSearch.value(),
     womenOr: $womenOr.prop('checked'),
