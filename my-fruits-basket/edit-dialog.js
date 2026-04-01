@@ -94,6 +94,7 @@ function openEditDialog(post) {
   createArtistsSelectEdit(post.artists);
   createTagsSelectEdit(post.tags);
   // m3u8
+  $editDialog.find('#fb-post-missav').val(post.missav);
   $editDialog.find('#fb-post-m3u8').val(post.m3u8);
   // Comment
   $editDialog.find('#fb-post-comment').val(post.comment);
@@ -201,6 +202,7 @@ function pickPost(event) {
     artists: artistsSelectEdit.value(),
     tags: tagsSelectEdit.value(),
     albums: albumsSelectEdit.value(),
+    missav: $('#fb-post-missav').val(),
     m3u8: $('#fb-post-m3u8').val(),
     comment: $('#fb-post-comment').val(),
     cover: $('#fb-post-cover').val(),

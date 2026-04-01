@@ -97,6 +97,7 @@ function createCard(post, callback) {
     }).join(''));
   }
   $(card).find('.fb-post-title').text(post.title);
+  $(card).find('.fb-post-missav').text(post.missav);
   $(card).find('.fb-post-m3u8').text(post.m3u8);
   $(card).find('.fb-post-comment').text(post.comment);
   $(card).find('.fb-post-cover').text(post.cover);
@@ -115,7 +116,7 @@ function createCard(post, callback) {
   $(card).find('.fb-post-type').text(post.type);
   createBadge(card, post.women, '.fb-post-women', '.fb-post-woman');
   createBadge(card, post.artists, '.fb-post-artists', '.fb-post-artist');
-  createBadge(card, post.tags, '.fb-post-tags', '.fb-post-tag', post.m3u8);
+  createBadge(card, post.tags, '.fb-post-tags', '.fb-post-tag', post.missav, post.m3u8);
   createBadge(card, post.albums, '.fb-post-albums', '.fb-post-album');
   $(card).find('.fb-post-url-count').text(post.imageIds ? post.imageIds.length : 0);
   if (post.createdAt) {
@@ -129,7 +130,7 @@ function createCard(post, callback) {
   callback(card);
 }
 
-function createBadge(card, items, areaClass, badgeClass, link) {
+function createBadge(card, items, areaClass, badgeClass, link, link2) {
   if (items) {
     //console.log(items);
     var area = $(card).find(areaClass);
@@ -139,12 +140,14 @@ function createBadge(card, items, areaClass, badgeClass, link) {
       $(badge).text(e);
       if (e === 'MISSAV') {
         $(badge).addClass('fb-post-tag-nyaa');
-        if (link) {
+        //if (link && link2) {
           //$(badge).css('border', '3px solid red');
           //$(badge).css('color', 'maroon');
           //$(badge).text('♥♥♥♥');
-          badge = $(`<a href="${link}">`).append($(badge));
-        }
+          $(badge).addClass('missav');
+          $(badge).attr('data-value', `${link} ${link2}`.trim());
+          //badge = $(`<a href="${link} ${link}">`).append($(badge));
+        //}
       }
       $(area).append(badge);
     });
@@ -197,6 +200,7 @@ function pickPost(event) {
     artists: card.find('.fb-post-artist').get().map((a) => $(a).text()),
     tags: card.find('.fb-post-tag').get().map((t) => $(t).text()),
     albums: card.find('.fb-post-album').get().map((a) => $(a).text()),
+    missav: card.find('.fb-post-missav').text(),
     m3u8: card.find('.fb-post-m3u8').text(),
     comment: card.find('.fb-post-comment').text(),
     cover: card.find('.fb-post-cover').text(),
@@ -226,3 +230,16 @@ function missavSearch(event) {
   var url = `https://missav.ws/ja/search/${post.title.replace(/ ?[0-9]+歳$/, '')}`;
   window.open(url, '_blank');
 }
+
+document.addEventListener('click', async (e) => {
+  if (!e.target.classList.contains('missav')) return;
+
+  const text = e.target.dataset.value;
+
+  try {
+    await navigator.clipboard.writeText(text);
+    console.log('コピー:', text);
+  } catch (err) {
+    console.error('コピー失敗:', err);
+  }
+});
