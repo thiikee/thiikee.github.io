@@ -88,3 +88,7 @@ img.firebaseui-idp-icon {
 .select-pure__options {
   max-height: 360px;
 }
+
+.missav {
+  cursor: pointer;
+}
