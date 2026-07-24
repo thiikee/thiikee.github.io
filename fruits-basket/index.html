@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>画像台帳</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #EDEAE0;
+    --card: #F7F5EE;
+    --ink: #262019;
+    --ink-soft: #6B6252;
+    --rule: #C9C2AE;
+    --navy: #2F3B54;
+    --brick: #8C3527;
+    --mustard: #A8791E;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Noto Sans JP', sans-serif;
+    line-height: 1.6;
+  }
+
+  h1, h2, h3 { font-family: 'Noto Serif JP', serif; margin: 0; }
+
+  .mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    letter-spacing: 0.02em;
+  }
+
+  header {
+    padding: 28px 32px 20px;
+    border-bottom: 1px solid var(--rule);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .title-block { display: flex; align-items: baseline; gap: 16px; }
+
+  header h1 { font-size: 22px; font-weight: 700; }
+  header p { color: var(--ink-soft); font-size: 13px; margin: 0; }
+
+  .auth-area { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  .auth-area input[type="email"] {
+    padding: 6px 8px;
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    font-size: 12px;
+    font-family: inherit;
+    background: var(--card);
+    color: var(--ink);
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 0;
+    min-height: calc(100vh - 90px);
+  }
+
+  aside {
+    border-right: 1px solid var(--rule);
+    padding: 24px 20px;
+  }
+
+  aside h2 { font-size: 14px; letter-spacing: 0.08em; color: var(--ink-soft); margin-bottom: 16px; }
+
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 12px; color: var(--ink-soft); margin-bottom: 4px; }
+  .field input[type="text"],
+  .field input[type="date"],
+  .field select {
+    width: 100%;
+    padding: 7px 8px;
+    border: 1px solid var(--rule);
+    background: var(--card);
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 13px;
+    border-radius: 2px;
+  }
+  .checkrow { display: flex; align-items: center; gap: 6px; font-size: 13px; margin-bottom: 8px; }
+
+  button {
+    font-family: inherit;
+    font-size: 13px;
+    border: 1px solid var(--navy);
+    background: var(--navy);
+    color: var(--paper);
+    padding: 8px 14px;
+    border-radius: 2px;
+    cursor: pointer;
+  }
+  button.ghost { background: transparent; color: var(--navy); }
+  button.danger { border-color: var(--brick); background: var(--brick); }
+  button.small { padding: 4px 9px; font-size: 12px; }
+  button:hover { opacity: 0.85; }
+
+  main { padding: 24px 32px; }
+
+  .main-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 18px;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card.deleted { opacity: 0.5; }
+
+  .cover {
+    aspect-ratio: 4 / 3;
+    background: repeating-linear-gradient(45deg, #E4E0D2, #E4E0D2 8px, #DAD5C4 8px, #DAD5C4 16px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ink-soft);
+    font-size: 11px;
+    text-align: center;
+    padding: 8px;
+  }
+
+  .stamp {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 34px;
+    height: 34px;
+    border: 2px dashed var(--navy);
+    border-radius: 50%;
+    color: var(--navy);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Noto Serif JP', serif;
+    font-weight: 700;
+    font-size: 15px;
+    transform: rotate(-10deg);
+    background: rgba(247, 245, 238, 0.85);
+  }
+
+  .card-body { padding: 12px; }
+  .card-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+  .card-meta { font-size: 11px; color: var(--ink-soft); margin-bottom: 8px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
+  .tag {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    border: 1px solid var(--rule);
+    color: var(--ink-soft);
+  }
+  .tag.person { border-color: var(--brick); color: var(--brick); }
+  .tag.creator { border-color: var(--mustard); color: var(--mustard); }
+
+  .card-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  dialog {
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 0;
+    width: 560px;
+    max-width: 92vw;
+  }
+  dialog::backdrop { background: rgba(38, 32, 25, 0.4); }
+  .dialog-inner { padding: 24px; max-height: 80vh; overflow-y: auto; }
+  .dialog-inner h2 { font-size: 18px; margin-bottom: 16px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .image-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
+  .image-row input[type="text"] { flex: 1; }
+
+  .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title-block">
+    <h1>画像台帳</h1>
+    <p>OneDrive上の画像を投稿単位でタグ管理する</p>
+  </div>
+  <div id="auth-area" class="auth-area"></div>
+</header>
+
+<div class="layout" id="layout">
+  <aside>
+    <h2>検索</h2>
+    <div class="field">
+      <label>タイトル</label>
+      <input type="text" id="f-title" placeholder="部分一致で検索" />
+    </div>
+    <div class="field">
+      <label>カテゴリ</label>
+      <select id="f-category">
+        <option value="">すべて</option>
+        <option value="photo">写真</option>
+        <option value="illustration">イラスト</option>
+        <option value="video">ビデオ</option>
+        <option value="magazine">雑誌</option>
+        <option value="movie">映画</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>実写/イラスト</label>
+      <select id="f-illustration">
+        <option value="">すべて</option>
+        <option value="false">実写</option>
+        <option value="true">イラスト</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>内容タグ (カンマ区切り・AND)</label>
+      <input type="text" id="f-content-tags" placeholder="例: 海岸,鉄道" />
+    </div>
+    <div class="field">
+      <label>人物タグ (カンマ区切り・AND)</label>
+      <input type="text" id="f-person-tags" />
+    </div>
+    <div class="field">
+      <label>作者タグ (カンマ区切り・AND)</label>
+      <input type="text" id="f-creator-tags" />
+    </div>
+    <div class="checkrow"><input type="checkbox" id="f-liked" /> <label for="f-liked">いいねのみ</label></div>
+    <div class="checkrow"><input type="checkbox" id="f-deleted" /> <label for="f-deleted">削除済みも表示</label></div>
+    <div class="field">
+      <label>並び替え</label>
+      <select id="f-sort">
+        <option value="updated_at">更新日</option>
+        <option value="production_date">制作日</option>
+        <option value="usage_count">使用回数</option>
+      </select>
+    </div>
+    <button id="btn-search" style="width:100%;">検索する</button>
+  </aside>
+
+  <main>
+    <div class="main-head">
+      <h2 class="mono" id="result-count" style="font-size:13px; color:var(--ink-soft);">-</h2>
+      <button id="btn-new">＋ 新規登録</button>
+    </div>
+    <div class="grid" id="results"></div>
+  </main>
+</div>
+
+<dialog id="dlg-new">
+  <div class="dialog-inner">
+    <h2>新規登録</h2>
+    <div class="field">
+      <label>タイトル</label>
+      <input type="text" id="n-title" />
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>カテゴリ</label>
+        <select id="n-category">
+          <option value="photo">写真</option>
+          <option value="illustration">イラスト</option>
+          <option value="video">ビデオ</option>
+          <option value="magazine">雑誌</option>
+          <option value="movie">映画</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>実写/イラスト</label>
+        <select id="n-illustration">
+          <option value="false">実写</option>
+          <option value="true">イラスト</option>
+        </select>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>制作日(わかる範囲で)</label>
+        <input type="date" id="n-date" />
+      </div>
+      <div class="field">
+        <label>制作日の精度</label>
+        <select id="n-date-precision">
+          <option value="unknown">不明</option>
+          <option value="year">年のみ</option>
+          <option value="month">年月</option>
+          <option value="day">年月日</option>
+        </select>
+      </div>
+    </div>
+    <div class="checkrow"><input type="checkbox" id="n-liked" /> <label for="n-liked">いいね</label></div>
+
+    <div class="field">
+      <label>内容タグ (カンマ区切り)</label>
+      <input type="text" id="n-content-tags" placeholder="例: 海岸,鉄道" />
+    </div>
+    <div class="field">
+      <label>人物タグ (カンマ区切り)</label>
+      <input type="text" id="n-person-tags" />
+    </div>
+    <div class="field">
+      <label>作者タグ (カンマ区切り)</label>
+      <input type="text" id="n-creator-tags" />
+    </div>
+
+    <div class="field">
+      <label>画像 (OneDriveのdriveId / itemId)</label>
+      <div id="n-images"></div>
+      <button type="button" class="ghost small" id="btn-add-image">＋ 画像を追加</button>
+    </div>
+
+    <div class="dialog-actions">
+      <button type="button" class="ghost" id="btn-cancel">キャンセル</button>
+      <button type="button" id="btn-save">登録する</button>
+    </div>
+  </div>
+</dialog>
+
+<script type="module">
+  import {
+    createPost, searchPosts, softDeletePost, restorePost, incrementUsageCount,
+    signInWithMagicLink, signOut, getCurrentSession, onAuthStateChange,
+  } from './api.js';
+
+  const CATEGORY_LABEL = { photo: '写', illustration: '絵', video: 'ビ', magazine: '誌', movie: '映' };
+  const CATEGORY_NAME  = { photo: '写真', illustration: 'イラスト', video: 'ビデオ', magazine: '雑誌', movie: '映画' };
+
+  const resultsEl = document.getElementById('results');
+  const countEl = document.getElementById('result-count');
+
+  function splitTags(value) {
+    return value.split(',').map((s) => s.trim()).filter(Boolean);
+  }
+
+  function fmtDate(d, precision) {
+    if (!d) return '制作日不明';
+    if (precision === 'year') return d.slice(0, 4) + '年頃';
+    if (precision === 'month') return d.slice(0, 7).replace('-', '年') + '月頃';
+    return d;
+  }
+
+  function renderCard(post) {
+    const el = document.createElement('div');
+    el.className = 'card' + (post.deleted_at ? ' deleted' : '');
+    el.innerHTML = `
+      <div class="cover">${post.cover_image_id ? 'カバー画像あり' : '画像未選択'}</div>
+      <div class="stamp">${CATEGORY_LABEL[post.category] ?? '?'}</div>
+      <div class="card-body">
+        <div class="card-title">${post.is_liked ? '♥ ' : ''}${post.title}</div>
+        <div class="card-meta mono">
+          ${CATEGORY_NAME[post.category]} ・ ${post.is_illustration ? 'イラスト' : '実写'} ・
+          ${fmtDate(post.production_date, post.production_date_precision)} ・
+          使用${post.usage_count}回
+        </div>
+        <div class="tags">
+          ${(post.content_tags || []).filter(Boolean).map((t) => `<span class="tag">${t}</span>`).join('')}
+          ${(post.person_tags || []).filter(Boolean).map((t) => `<span class="tag person">${t}</span>`).join('')}
+          ${(post.creator_tags || []).filter(Boolean).map((t) => `<span class="tag creator">${t}</span>`).join('')}
+        </div>
+        <div class="card-actions">
+          <button class="small ghost" data-action="use">使用+1</button>
+          ${post.deleted_at
+            ? '<button class="small ghost" data-action="restore">復元</button>'
+            : '<button class="small danger" data-action="delete">論理削除</button>'}
+        </div>
+      </div>
+    `;
+    el.querySelector('[data-action="use"]').onclick = async () => {
+      await incrementUsageCount(post.id);
+      runSearch();
+    };
+    const delBtn = el.querySelector('[data-action="delete"]');
+    if (delBtn) delBtn.onclick = async () => { await softDeletePost(post.id); runSearch(); };
+    const restoreBtn = el.querySelector('[data-action="restore"]');
+    if (restoreBtn) restoreBtn.onclick = async () => { await restorePost(post.id); runSearch(); };
+    return el;
+  }
+
+  async function runSearch() {
+    const filters = {
+      titleQuery: document.getElementById('f-title').value,
+      category: document.getElementById('f-category').value || null,
+      isIllustration: document.getElementById('f-illustration').value === ''
+        ? null : document.getElementById('f-illustration').value === 'true',
+      isLiked: document.getElementById('f-liked').checked ? true : null,
+      includeDeleted: document.getElementById('f-deleted').checked,
+      contentTags: splitTags(document.getElementById('f-content-tags').value),
+      personTags: splitTags(document.getElementById('f-person-tags').value),
+      creatorTags: splitTags(document.getElementById('f-creator-tags').value),
+      sortBy: document.getElementById('f-sort').value,
+    };
+    const posts = await searchPosts(filters);
+    countEl.textContent = `${posts.length} 件`;
+    resultsEl.innerHTML = '';
+    posts.forEach((p) => resultsEl.appendChild(renderCard(p)));
+  }
+
+  document.getElementById('btn-search').onclick = runSearch;
+
+  // ---- 新規登録ダイアログ ----
+  const dlg = document.getElementById('dlg-new');
+  document.getElementById('btn-new').onclick = () => dlg.showModal();
+  document.getElementById('btn-cancel').onclick = () => dlg.close();
+
+  function addImageRow() {
+    const wrap = document.createElement('div');
+    wrap.className = 'image-row';
+    wrap.innerHTML = `
+      <input type="radio" name="cover" title="カバーに設定" />
+      <input type="text" placeholder="driveId" class="mono img-drive" />
+      <input type="text" placeholder="itemId" class="mono img-item" />
+      <button type="button" class="ghost small" data-action="remove">×</button>
+    `;
+    wrap.querySelector('[data-action="remove"]').onclick = () => wrap.remove();
+    document.getElementById('n-images').appendChild(wrap);
+  }
+  document.getElementById('btn-add-image').onclick = addImageRow;
+
+  document.getElementById('btn-save').onclick = async () => {
+    const imageRows = [...document.querySelectorAll('#n-images .image-row')];
+    const images = imageRows
+      .map((row, i) => ({
+        driveId: row.querySelector('.img-drive').value.trim(),
+        itemId: row.querySelector('.img-item').value.trim(),
+        isCover: row.querySelector('input[type="radio"]').checked,
+        sortOrder: i,
+      }))
+      .filter((img) => img.driveId && img.itemId);
+
+    await createPost({
+      title: document.getElementById('n-title').value.trim(),
+      category: document.getElementById('n-category').value,
+      isIllustration: document.getElementById('n-illustration').value === 'true',
+      isLiked: document.getElementById('n-liked').checked,
+      productionDate: document.getElementById('n-date').value || null,
+      productionDatePrecision: document.getElementById('n-date-precision').value,
+      images,
+      tags: {
+        content: splitTags(document.getElementById('n-content-tags').value),
+        person: splitTags(document.getElementById('n-person-tags').value),
+        creator: splitTags(document.getElementById('n-creator-tags').value),
+      },
+    });
+
+    dlg.close();
+    dlg.querySelector('.dialog-inner').querySelectorAll('input[type="text"], input[type="date"]').forEach((i) => (i.value = ''));
+    document.getElementById('n-images').innerHTML = '';
+    runSearch();
+  };
+
+  // ---- ログイン状態の管理 ----
+  const authArea = document.getElementById('auth-area');
+  const layoutEl = document.getElementById('layout');
+
+  function renderAuthArea(session) {
+    authArea.innerHTML = '';
+    if (session?.user) {
+      layoutEl.style.display = '';
+      const label = document.createElement('span');
+      label.className = 'mono';
+      label.style.color = 'var(--ink-soft)';
+      label.textContent = session.user.email;
+      const btn = document.createElement('button');
+      btn.className = 'ghost small';
+      btn.textContent = 'ログアウト';
+      btn.onclick = () => signOut();
+      authArea.append(label, btn);
+    } else {
+      layoutEl.style.display = 'none';
+      const input = document.createElement('input');
+      input.type = 'email';
+      input.placeholder = 'メールアドレス';
+      const btn = document.createElement('button');
+      btn.className = 'small';
+      btn.textContent = 'ログインリンクを送信';
+      btn.onclick = async () => {
+        const email = input.value.trim();
+        if (!email) return;
+        btn.disabled = true;
+        btn.textContent = '送信中…';
+        try {
+          await signInWithMagicLink(email);
+          authArea.innerHTML = '<span class="mono" style="color:var(--ink-soft);">メールのリンクを確認してください</span>';
+        } catch (e) {
+          alert('送信に失敗しました: ' + e.message);
+          btn.disabled = false;
+          btn.textContent = 'ログインリンクを送信';
+        }
+      };
+      authArea.append(input, btn);
+    }
+  }
+
+  onAuthStateChange((session) => {
+    renderAuthArea(session);
+    if (session) runSearch();
+  });
+  renderAuthArea(await getCurrentSession());
+
+  addImageRow();
+</script>
+
+</body>
+</html>
