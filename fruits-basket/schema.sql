@@ -154,6 +154,8 @@ $$ language plpgsql security definer;
 -- ---------- 検索用RPC ----------
 -- content_tags_all / person_tags_all / creator_tags_all は「すべて含む(AND)」条件。
 -- 空配列を渡せばそのタグ種別は絞り込み対象外になる。
+drop function if exists search_posts;
+
 create or replace function search_posts(
   title_query       text default null,
   p_category        post_category default null,
@@ -181,6 +183,8 @@ returns table (
   updated_at                 timestamptz,
   deleted_at                 timestamptz,
   cover_image_id             uuid,
+  cover_drive_id             text,
+  cover_item_id              text,
   content_tags               text[],
   person_tags                text[],
   creator_tags               text[]
@@ -193,9 +197,11 @@ as $$
     p.id, p.title, p.category, p.is_illustration, p.is_liked,
     p.production_date, p.production_date_precision, p.usage_count,
     p.created_at, p.updated_at, p.deleted_at, p.cover_image_id,
+    ci.onedrive_drive_id, ci.onedrive_item_id,
     pte.content_tags, pte.person_tags, pte.creator_tags
   from posts p
   left join post_tags_expanded pte on pte.post_id = p.id
+  left join images ci on ci.id = p.cover_image_id
   where p.owner_id = auth.uid()
     and (include_deleted or p.deleted_at is null)
     and (title_query is null or title_query = '' or p.title ilike '%' || title_query || '%')
