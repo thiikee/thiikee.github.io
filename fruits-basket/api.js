@@ -29,9 +29,10 @@ export async function getCurrentSession() {
   return data.session;
 }
 
-// session(ログイン中はuser情報あり、未ログインはnull)が変わるたびcallbackを呼ぶ
+// session(ログイン中はuser情報あり、未ログインはnull)が変わるたびcallback(event, session)を呼ぶ
+// event例: 'INITIAL_SESSION' | 'SIGNED_IN' | 'SIGNED_OUT' | 'TOKEN_REFRESHED' | 'USER_UPDATED'
 export function onAuthStateChange(callback) {
-  return supabase.auth.onAuthStateChange((_event, session) => callback(session));
+  return supabase.auth.onAuthStateChange((event, session) => callback(event, session));
 }
 
 // ---------------- タグ ----------------
@@ -134,8 +135,10 @@ export async function createPost({
       .select('id');
     if (imgErr) throw imgErr;
 
-    const coverIdx = images.findIndex((img) => img.isCover);
-    if (coverIdx >= 0 && insertedImages[coverIdx]) {
+    const explicitCoverIdx = images.findIndex((img) => img.isCover);
+    // 明示的にカバーを指定していなければ、先頭(sortOrderが最小)の画像を仮のカバーにする
+    const coverIdx = explicitCoverIdx >= 0 ? explicitCoverIdx : 0;
+    if (insertedImages[coverIdx]) {
       await setCoverImage(postId, insertedImages[coverIdx].id);
     }
   }

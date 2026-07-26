@@ -49,6 +49,8 @@
   header h1 { font-size: 22px; font-weight: 700; }
   header p { color: var(--ink-soft); font-size: 13px; margin: 0; }
 
+  .header-right { display: flex; align-items: center; gap: 18px; }
+
   .auth-area { display: flex; align-items: center; gap: 8px; font-size: 12px; }
   .auth-area input[type="email"] {
     padding: 6px 8px;
@@ -58,6 +60,25 @@
     font-family: inherit;
     background: var(--card);
     color: var(--ink);
+  }
+
+  .picker-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-bottom: 1px solid var(--rule);
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .picker-row:hover { background: rgba(47, 59, 84, 0.06); }
+  .picker-row:last-child { border-bottom: none; }
+  .picker-thumb {
+    width: 32px; height: 32px;
+    object-fit: cover;
+    border-radius: 2px;
+    background: var(--paper);
+    flex-shrink: 0;
   }
 
   .layout {
@@ -190,6 +211,7 @@
 
   .image-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
   .image-row input[type="text"] { flex: 1; }
+  .image-row .img-name { flex: 1; font-size: 11px; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
 </style>
@@ -201,7 +223,10 @@
     <h1>画像台帳</h1>
     <p>OneDrive上の画像を投稿単位でタグ管理する</p>
   </div>
-  <div id="auth-area" class="auth-area"></div>
+  <div class="header-right">
+    <div id="auth-area" class="auth-area"></div>
+    <div id="od-auth-area" class="auth-area"></div>
+  </div>
 </header>
 
 <div class="layout" id="layout">
@@ -321,9 +346,10 @@
     </div>
 
     <div class="field">
-      <label>画像 (OneDriveのdriveId / itemId)</label>
+      <label>画像</label>
       <div id="n-images"></div>
-      <button type="button" class="ghost small" id="btn-add-image">＋ 画像を追加</button>
+      <button type="button" class="ghost small" id="btn-open-picker">OneDriveから選択</button>
+      <button type="button" class="ghost small" id="btn-add-image">＋ 手入力で追加</button>
     </div>
 
     <div class="dialog-actions">
@@ -333,11 +359,26 @@
   </div>
 </dialog>
 
+<dialog id="dlg-picker">
+  <div class="dialog-inner">
+    <h2>OneDriveから選択</h2>
+    <div id="picker-breadcrumb" class="mono" style="font-size:12px;color:var(--ink-soft);margin-bottom:10px;"></div>
+    <div id="picker-list" style="max-height:360px;overflow-y:auto;border:1px solid var(--rule);border-radius:2px;"></div>
+    <div class="dialog-actions">
+      <button type="button" class="ghost" id="btn-picker-cancel">キャンセル</button>
+      <button type="button" id="btn-picker-add">選択した画像を追加</button>
+    </div>
+  </div>
+</dialog>
+
 <script type="module">
   import {
     createPost, searchPosts, softDeletePost, restorePost, incrementUsageCount,
     signInWithMagicLink, signOut, getCurrentSession, onAuthStateChange,
   } from './api.js';
+  import {
+    getOneDriveAccount, signInOneDrive, getMyDriveId, listFolder, getThumbnailUrl,
+  } from './onedrive.js';
 
   const CATEGORY_LABEL = { photo: '写', illustration: '絵', video: 'ビ', magazine: '誌', movie: '映' };
   const CATEGORY_NAME  = { photo: '写真', illustration: 'イラスト', video: 'ビデオ', magazine: '雑誌', movie: '映画' };
@@ -360,7 +401,7 @@
     const el = document.createElement('div');
     el.className = 'card' + (post.deleted_at ? ' deleted' : '');
     el.innerHTML = `
-      <div class="cover">${post.cover_image_id ? 'カバー画像あり' : '画像未選択'}</div>
+      <div class="cover">${post.cover_image_id ? '画像を読み込み中…' : '画像未選択'}</div>
       <div class="stamp">${CATEGORY_LABEL[post.category] ?? '?'}</div>
       <div class="card-body">
         <div class="card-title">${post.is_liked ? '♥ ' : ''}${post.title}</div>
@@ -393,6 +434,33 @@
     return el;
   }
 
+  // OneDriveに接続済みなら、カバー画像のサムネイルを非同期で取得して差し替える
+  async function attachCoverThumbnail(cardEl, post) {
+    const coverDiv = cardEl.querySelector('.cover');
+    if (!post.cover_drive_id || !post.cover_item_id) {
+      coverDiv.textContent = post.cover_image_id ? 'カバー画像あり(未接続)' : '画像未選択';
+      return;
+    }
+    const account = await getOneDriveAccount();
+    if (!account) {
+      coverDiv.textContent = 'カバー画像あり(OneDrive未接続)';
+      return;
+    }
+    try {
+      const url = await getThumbnailUrl(post.cover_drive_id, post.cover_item_id, 'medium');
+      if (url) {
+        coverDiv.style.backgroundImage = `url(${url})`;
+        coverDiv.style.backgroundSize = 'cover';
+        coverDiv.style.backgroundPosition = 'center';
+        coverDiv.textContent = '';
+      } else {
+        coverDiv.textContent = 'サムネイル取得不可';
+      }
+    } catch {
+      coverDiv.textContent = 'サムネイル取得失敗';
+    }
+  }
+
   async function runSearch() {
     const filters = {
       titleQuery: document.getElementById('f-title').value,
@@ -409,7 +477,11 @@
     const posts = await searchPosts(filters);
     countEl.textContent = `${posts.length} 件`;
     resultsEl.innerHTML = '';
-    posts.forEach((p) => resultsEl.appendChild(renderCard(p)));
+    posts.forEach((p) => {
+      const card = renderCard(p);
+      resultsEl.appendChild(card);
+      attachCoverThumbnail(card, p);
+    });
   }
 
   document.getElementById('btn-search').onclick = runSearch;
@@ -419,19 +491,28 @@
   document.getElementById('btn-new').onclick = () => dlg.showModal();
   document.getElementById('btn-cancel').onclick = () => dlg.close();
 
-  function addImageRow() {
+  function addImageRow(preset) {
+    const isFirst = document.getElementById('n-images').children.length === 0;
     const wrap = document.createElement('div');
     wrap.className = 'image-row';
     wrap.innerHTML = `
-      <input type="radio" name="cover" title="カバーに設定" />
+      <label style="display:flex;align-items:center;gap:3px;font-size:11px;color:var(--ink-soft);white-space:nowrap;">
+        <input type="radio" name="cover" title="カバーに設定" ${isFirst ? 'checked' : ''} /> カバー
+      </label>
       <input type="text" placeholder="driveId" class="mono img-drive" />
       <input type="text" placeholder="itemId" class="mono img-item" />
+      <span class="img-name mono"></span>
       <button type="button" class="ghost small" data-action="remove">×</button>
     `;
+    if (preset) {
+      wrap.querySelector('.img-drive').value = preset.driveId;
+      wrap.querySelector('.img-item').value = preset.itemId;
+      wrap.querySelector('.img-name').textContent = preset.name ?? '';
+    }
     wrap.querySelector('[data-action="remove"]').onclick = () => wrap.remove();
     document.getElementById('n-images').appendChild(wrap);
   }
-  document.getElementById('btn-add-image').onclick = addImageRow;
+  document.getElementById('btn-add-image').onclick = () => addImageRow();
 
   document.getElementById('btn-save').onclick = async () => {
     const imageRows = [...document.querySelectorAll('#n-images .image-row')];
@@ -508,11 +589,131 @@
     }
   }
 
-  onAuthStateChange((session) => {
+  // SupabaseはタブがフォーカスからSIGNED_INを再度発火することがあるため、
+  // イベント名ではなく「サインイン中のユーザーIDが実際に変わったか」で判定する。
+  let lastSignedInUserId = null;
+  onAuthStateChange((event, session) => {
     renderAuthArea(session);
-    if (session) runSearch();
+    if (event === 'SIGNED_OUT') {
+      lastSignedInUserId = null;
+      return;
+    }
+    const currentUserId = session?.user?.id ?? null;
+    if (currentUserId && currentUserId !== lastSignedInUserId) {
+      lastSignedInUserId = currentUserId;
+      runSearch();
+    }
   });
   renderAuthArea(await getCurrentSession());
+
+  // ---- OneDrive接続状態の管理 ----
+  const odAuthArea = document.getElementById('od-auth-area');
+
+  async function renderOdAuthArea() {
+    odAuthArea.innerHTML = '';
+    const account = await getOneDriveAccount();
+    if (account) {
+      const label = document.createElement('span');
+      label.className = 'mono';
+      label.style.color = 'var(--ink-soft)';
+      label.textContent = 'OneDrive: ' + account.username;
+      odAuthArea.appendChild(label);
+    } else {
+      const btn = document.createElement('button');
+      btn.className = 'ghost small';
+      btn.textContent = 'OneDriveに接続';
+      btn.onclick = async () => {
+        try {
+          await signInOneDrive();
+          renderOdAuthArea();
+        } catch (e) {
+          alert('OneDrive接続に失敗しました: ' + e.message);
+        }
+      };
+      odAuthArea.appendChild(btn);
+    }
+  }
+  renderOdAuthArea();
+
+  // ---- OneDriveフォルダピッカー ----
+  const dlgPicker = document.getElementById('dlg-picker');
+  const pickerList = document.getElementById('picker-list');
+  const pickerBreadcrumb = document.getElementById('picker-breadcrumb');
+  let pickerStack = [{ id: null, name: 'ルート' }];
+  let pickerSelection = new Map();
+  let pickerDriveId = null;
+
+  document.getElementById('btn-open-picker').onclick = async () => {
+    const account = await getOneDriveAccount();
+    if (!account) {
+      alert('先にヘッダーの「OneDriveに接続」からログインしてください');
+      return;
+    }
+    pickerStack = [{ id: null, name: 'ルート' }];
+    pickerSelection = new Map();
+    dlgPicker.showModal();
+    await renderPickerFolder();
+  };
+  document.getElementById('btn-picker-cancel').onclick = () => dlgPicker.close();
+
+  async function renderPickerFolder() {
+    pickerBreadcrumb.textContent = pickerStack.map((s) => s.name).join(' / ');
+    pickerList.innerHTML = '<div style="padding:10px;color:var(--ink-soft);font-size:12px;">読み込み中…</div>';
+
+    if (!pickerDriveId) pickerDriveId = await getMyDriveId();
+    const current = pickerStack[pickerStack.length - 1];
+    const items = await listFolder(current.id);
+    pickerList.innerHTML = '';
+
+    if (pickerStack.length > 1) {
+      const upRow = document.createElement('div');
+      upRow.className = 'picker-row';
+      upRow.textContent = '.. 上の階層へ';
+      upRow.onclick = () => { pickerStack.pop(); renderPickerFolder(); };
+      pickerList.appendChild(upRow);
+    }
+
+    for (const item of items) {
+      const row = document.createElement('div');
+      row.className = 'picker-row';
+
+      if (item.folder) {
+        row.innerHTML = `<span>📁 ${item.name}</span> <span class="mono" style="margin-left:auto;color:var(--ink-soft);">${item.folder.childCount}件</span>`;
+        row.onclick = () => { pickerStack.push({ id: item.id, name: item.name }); renderPickerFolder(); };
+      } else if (item.image) {
+        const isChecked = pickerSelection.has(item.id);
+        row.innerHTML = `
+          <input type="checkbox" ${isChecked ? 'checked' : ''} />
+          <img class="picker-thumb" />
+          <span style="flex:1;">${item.name}</span>
+        `;
+        const checkbox = row.querySelector('input');
+        checkbox.onclick = (e) => {
+          e.stopPropagation();
+          if (checkbox.checked) {
+            pickerSelection.set(item.id, { driveId: pickerDriveId, itemId: item.id, name: item.name });
+          } else {
+            pickerSelection.delete(item.id);
+          }
+        };
+        row.onclick = () => checkbox.click();
+
+        // サムネイルは非同期で後から差し込む(一覧表示をブロックしない)
+        getThumbnailUrl(pickerDriveId, item.id, 'small').then((url) => {
+          if (url) row.querySelector('.picker-thumb').src = url;
+        });
+      } else {
+        row.innerHTML = `<span class="mono" style="color:var(--ink-soft);">${item.name}</span>`;
+        row.style.cursor = 'default';
+      }
+      pickerList.appendChild(row);
+    }
+  }
+
+  document.getElementById('btn-picker-add').onclick = () => {
+    for (const sel of pickerSelection.values()) addImageRow(sel);
+    dlgPicker.close();
+  };
 
   addImageRow();
 </script>
