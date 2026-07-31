@@ -97,3 +97,9 @@ export async function getThumbnailUrl(driveId, itemId, size = 'medium') {
     return null;
   }
 }
+
+// 閲覧用のフルサイズ画像の一時ダウンロードURLを取得(<img src>にそのまま使える)
+export async function getDownloadUrl(driveId, itemId) {
+  const data = await graphFetch(`/drives/${driveId}/items/${itemId}`);
+  return data['@microsoft.graph.downloadUrl'] ?? null;
+}

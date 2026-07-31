@@ -3,7 +3,7 @@ import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.js';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
-export const CATEGORIES = ['photo', 'illustration', 'video', 'magazine', 'movie'];
+export const CATEGORIES = ['photo', 'illustration', 'comic', 'anime', 'video', 'magazine', 'movie'];
 export const TAG_NAMESPACES = ['content', 'person', 'creator'];
 
 // ---------------- 認証 ----------------
@@ -96,10 +96,12 @@ export async function replaceTags(postId, tagsByNamespace) {
 export async function createPost({
   title,
   category,
-  isIllustration,
   isLiked = false,
+  isOwned = null,
   productionDate = null,
   productionDatePrecision = 'unknown',
+  comment = null,
+  sourceUrl = null,
   images = [],
   tags = { content: [], person: [], creator: [] },
 }) {
@@ -108,10 +110,12 @@ export async function createPost({
     .insert({
       title,
       category,
-      is_illustration: isIllustration,
       is_liked: isLiked,
+      is_owned: isOwned,
       production_date: productionDate,
       production_date_precision: productionDatePrecision,
+      comment,
+      source_url: sourceUrl,
     })
     .select('id')
     .single();
@@ -154,8 +158,10 @@ export async function updatePost(postId, fields) {
   const patch = {};
   if ('title' in fields) patch.title = fields.title;
   if ('category' in fields) patch.category = fields.category;
-  if ('isIllustration' in fields) patch.is_illustration = fields.isIllustration;
   if ('isLiked' in fields) patch.is_liked = fields.isLiked;
+  if ('isOwned' in fields) patch.is_owned = fields.isOwned;
+  if ('comment' in fields) patch.comment = fields.comment;
+  if ('sourceUrl' in fields) patch.source_url = fields.sourceUrl;
   if ('productionDate' in fields) patch.production_date = fields.productionDate;
   if ('productionDatePrecision' in fields) patch.production_date_precision = fields.productionDatePrecision;
 
@@ -189,6 +195,30 @@ export async function listImages(postId) {
   return data;
 }
 
+// 投稿1件を取得(編集フォームの初期値や、最新のcover_image_id確認に使う)
+export async function getPost(postId) {
+  const { data, error } = await supabase.from('posts').select('*').eq('id', postId).single();
+  if (error) throw error;
+  return data;
+}
+
+// 画像を投稿から削除(OneDrive上の実ファイルは削除しない)。
+// 削除した画像がカバーだった場合、postsのcover_image_idはON DELETE SET NULLで自動的にNULLになる。
+export async function deleteImage(imageId) {
+  const { error } = await supabase.from('images').delete().eq('id', imageId);
+  if (error) throw error;
+}
+
+// 画像の並び順を入れ替える。orderedImageIdsは新しい表示順のimage.id配列。
+export async function reorderImages(postId, orderedImageIds) {
+  const updates = orderedImageIds.map((imageId, index) =>
+    supabase.from('images').update({ sort_order: index }).eq('id', imageId).eq('post_id', postId)
+  );
+  const results = await Promise.all(updates);
+  const failed = results.find((r) => r.error);
+  if (failed) throw failed.error;
+}
+
 // ---------------- 論理削除 ----------------
 
 export async function softDeletePost(postId) {
@@ -207,7 +237,12 @@ export async function restorePost(postId) {
 // ---------------- 使用回数 ----------------
 
 export async function incrementUsageCount(postId) {
-  const { error } = await supabase.rpc('increment_usage_count', { target_post_id: postId });
+  const { error } = await supabase.rpc('adjust_usage_count', { target_post_id: postId, delta: 1 });
+  if (error) throw error;
+}
+
+export async function decrementUsageCount(postId) {
+  const { error } = await supabase.rpc('adjust_usage_count', { target_post_id: postId, delta: -1 });
   if (error) throw error;
 }
 
@@ -221,9 +256,9 @@ export async function incrementUsageCount(postId) {
 export async function searchPosts(filters = {}) {
   const { data, error } = await supabase.rpc('search_posts', {
     title_query: filters.titleQuery || null,
-    p_category: filters.category || null,
-    p_is_illustration: filters.isIllustration ?? null,
+    p_categories: filters.categories ?? [],
     p_is_liked: filters.isLiked ?? null,
+    p_is_owned: filters.isOwned ?? null,
     content_tags_all: filters.contentTags ?? [],
     person_tags_all: filters.personTags ?? [],
     creator_tags_all: filters.creatorTags ?? [],

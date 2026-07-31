@@ -99,6 +99,7 @@
   .field label { display: block; font-size: 12px; color: var(--ink-soft); margin-bottom: 4px; }
   .field input[type="text"],
   .field input[type="date"],
+  .field textarea,
   .field select {
     width: 100%;
     padding: 7px 8px;
@@ -109,7 +110,65 @@
     font-size: 13px;
     border-radius: 2px;
   }
+  .field textarea { resize: vertical; }
   .checkrow { display: flex; align-items: center; gap: 6px; font-size: 13px; margin-bottom: 8px; }
+  .checkbox-group { display: flex; flex-direction: column; gap: 5px; font-size: 12px; }
+  .checkbox-group label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+
+  .tag-chip-input-box {
+    border: 1px solid var(--rule);
+    background: var(--card);
+    border-radius: 2px;
+    padding: 6px;
+  }
+  .tag-chip-list { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px; }
+  .tag-chip-list:empty { margin-bottom: 0; }
+  .tag-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    padding: 2px 4px 2px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--rule);
+    color: var(--ink);
+    background: var(--paper);
+  }
+  .tag-chip button {
+    border: none;
+    background: transparent;
+    color: var(--ink-soft);
+    cursor: pointer;
+    font-size: 12px;
+    padding: 0 4px;
+  }
+  .tag-chip-input-box input[type="text"] {
+    width: 100%;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 13px;
+    padding: 2px;
+  }
+  .tag-chip-input-box input[type="text"]:focus { outline: none; }
+  .tag-suggest-wrap { position: relative; }
+  .tag-suggest-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 20;
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-top: none;
+    max-height: 160px;
+    overflow-y: auto;
+  }
+  .tag-suggest-item { padding: 6px 8px; font-size: 12px; cursor: pointer; }
+  .tag-suggest-item:hover { background: rgba(47, 59, 84, 0.08); }
+
+  .copy-btn { border: none; background: transparent; color: var(--ink-soft); cursor: pointer; font-size: 12px; padding: 2px 4px; }
+  .copy-btn:hover { color: var(--navy); }
 
   button {
     font-family: inherit;
@@ -195,6 +254,27 @@
   .tag.person { border-color: var(--brick); color: var(--brick); }
   .tag.creator { border-color: var(--mustard); color: var(--mustard); }
 
+  .card-comment {
+    font-size: 11px;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .card-source {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 8px;
+    font-size: 10px;
+  }
+  .card-source-url {
+    color: var(--ink-soft);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+  }
   .card-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 
   dialog {
@@ -208,6 +288,59 @@
   .dialog-inner { padding: 24px; max-height: 80vh; overflow-y: auto; }
   .dialog-inner h2 { font-size: 18px; margin-bottom: 16px; }
   .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  #dlg-viewer {
+    width: 90vw;
+    max-width: 1100px;
+    background: #1B1712;
+    border: none;
+  }
+  #dlg-viewer::backdrop { background: rgba(10, 8, 6, 0.8); }
+  .viewer-inner {
+    position: relative;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .viewer-close {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    background: transparent;
+    border: none;
+    color: #EDEAE0;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 6px;
+  }
+  .viewer-image-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 200px;
+  }
+  .viewer-img { max-width: 100%; max-height: 75vh; object-fit: contain; }
+  .viewer-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(237, 234, 224, 0.15);
+    color: #EDEAE0;
+    border: none;
+    font-size: 26px;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    cursor: pointer;
+  }
+  .viewer-nav:hover { background: rgba(237, 234, 224, 0.3); }
+  .viewer-prev { left: 4px; }
+  .viewer-next { right: 4px; }
+  .viewer-caption { margin-top: 14px; color: #C9C2AE; font-size: 12px; }
 
   .image-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
   .image-row input[type="text"] { flex: 1; }
@@ -237,35 +370,36 @@
       <input type="text" id="f-title" placeholder="部分一致で検索" />
     </div>
     <div class="field">
-      <label>カテゴリ</label>
-      <select id="f-category">
+      <label>カテゴリ(複数選択可)</label>
+      <div id="f-category-group" class="checkbox-group">
+        <label><input type="checkbox" value="photo" /> 写真</label>
+        <label><input type="checkbox" value="illustration" /> イラスト</label>
+        <label><input type="checkbox" value="comic" /> 漫画</label>
+        <label><input type="checkbox" value="anime" /> アニメ</label>
+        <label><input type="checkbox" value="video" /> ビデオ</label>
+        <label><input type="checkbox" value="magazine" /> 雑誌</label>
+        <label><input type="checkbox" value="movie" /> 映画</label>
+      </div>
+    </div>
+    <div class="field">
+      <label>所有状況(ビデオ)</label>
+      <select id="f-owned">
         <option value="">すべて</option>
-        <option value="photo">写真</option>
-        <option value="illustration">イラスト</option>
-        <option value="video">ビデオ</option>
-        <option value="magazine">雑誌</option>
-        <option value="movie">映画</option>
+        <option value="true">所有している</option>
+        <option value="false">所有していない</option>
       </select>
     </div>
     <div class="field">
-      <label>実写/イラスト</label>
-      <select id="f-illustration">
-        <option value="">すべて</option>
-        <option value="false">実写</option>
-        <option value="true">イラスト</option>
-      </select>
+      <label>内容タグ (AND)</label>
+      <div id="f-content-tags-wrap"></div>
     </div>
     <div class="field">
-      <label>内容タグ (カンマ区切り・AND)</label>
-      <input type="text" id="f-content-tags" placeholder="例: 海岸,鉄道" />
+      <label>人物タグ (AND)</label>
+      <div id="f-person-tags-wrap"></div>
     </div>
     <div class="field">
-      <label>人物タグ (カンマ区切り・AND)</label>
-      <input type="text" id="f-person-tags" />
-    </div>
-    <div class="field">
-      <label>作者タグ (カンマ区切り・AND)</label>
-      <input type="text" id="f-creator-tags" />
+      <label>作者タグ (AND)</label>
+      <div id="f-creator-tags-wrap"></div>
     </div>
     <div class="checkrow"><input type="checkbox" id="f-liked" /> <label for="f-liked">いいねのみ</label></div>
     <div class="checkrow"><input type="checkbox" id="f-deleted" /> <label for="f-deleted">削除済みも表示</label></div>
@@ -278,6 +412,7 @@
       </select>
     </div>
     <button id="btn-search" style="width:100%;">検索する</button>
+    <button id="btn-clear" class="ghost" style="width:100%; margin-top:8px;">クリア</button>
   </aside>
 
   <main>
@@ -302,47 +437,52 @@
         <select id="n-category">
           <option value="photo">写真</option>
           <option value="illustration">イラスト</option>
+          <option value="comic">漫画</option>
+          <option value="anime">アニメ</option>
           <option value="video">ビデオ</option>
           <option value="magazine">雑誌</option>
           <option value="movie">映画</option>
         </select>
       </div>
       <div class="field">
-        <label>実写/イラスト</label>
-        <select id="n-illustration">
-          <option value="false">実写</option>
-          <option value="true">イラスト</option>
-        </select>
-      </div>
-    </div>
-    <div class="row2">
-      <div class="field">
         <label>制作日(わかる範囲で)</label>
         <input type="date" id="n-date" />
       </div>
-      <div class="field">
-        <label>制作日の精度</label>
-        <select id="n-date-precision">
-          <option value="unknown">不明</option>
-          <option value="year">年のみ</option>
-          <option value="month">年月</option>
-          <option value="day">年月日</option>
-        </select>
-      </div>
+    </div>
+    <div class="field">
+      <label>制作日の精度</label>
+      <select id="n-date-precision">
+        <option value="unknown">不明</option>
+        <option value="year">年のみ</option>
+        <option value="month">年月</option>
+        <option value="day">年月日</option>
+      </select>
     </div>
     <div class="checkrow"><input type="checkbox" id="n-liked" /> <label for="n-liked">いいね</label></div>
+    <div class="checkrow" id="n-owned-wrap" style="display:none;">
+      <input type="checkbox" id="n-owned" /> <label for="n-owned">実体を所有している</label>
+    </div>
 
     <div class="field">
-      <label>内容タグ (カンマ区切り)</label>
-      <input type="text" id="n-content-tags" placeholder="例: 海岸,鉄道" />
+      <label>内容タグ</label>
+      <div id="n-content-tags-wrap"></div>
     </div>
     <div class="field">
-      <label>人物タグ (カンマ区切り)</label>
-      <input type="text" id="n-person-tags" />
+      <label>人物タグ</label>
+      <div id="n-person-tags-wrap"></div>
     </div>
     <div class="field">
-      <label>作者タグ (カンマ区切り)</label>
-      <input type="text" id="n-creator-tags" />
+      <label>作者タグ</label>
+      <div id="n-creator-tags-wrap"></div>
+    </div>
+
+    <div class="field">
+      <label>コメント</label>
+      <textarea id="n-comment" rows="3" autocomplete="off"></textarea>
+    </div>
+    <div class="field">
+      <label>引用元URL</label>
+      <input type="text" id="n-source-url" autocomplete="off" placeholder="https://..." />
     </div>
 
     <div class="field">
@@ -362,7 +502,13 @@
 <dialog id="dlg-picker">
   <div class="dialog-inner">
     <h2>OneDriveから選択</h2>
-    <div id="picker-breadcrumb" class="mono" style="font-size:12px;color:var(--ink-soft);margin-bottom:10px;"></div>
+    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px;">
+      <div id="picker-breadcrumb" class="mono" style="font-size:12px;color:var(--ink-soft);"></div>
+      <div style="display:flex; gap:6px;">
+        <button type="button" class="ghost small" id="btn-picker-select-all">すべて選択</button>
+        <button type="button" class="ghost small" id="btn-picker-clear">選択解除</button>
+      </div>
+    </div>
     <div id="picker-list" style="max-height:360px;overflow-y:auto;border:1px solid var(--rule);border-radius:2px;"></div>
     <div class="dialog-actions">
       <button type="button" class="ghost" id="btn-picker-cancel">キャンセル</button>
@@ -371,17 +517,129 @@
   </div>
 </dialog>
 
+<dialog id="dlg-viewer">
+  <div class="viewer-inner">
+    <button type="button" class="viewer-close" id="btn-viewer-close">×</button>
+    <div class="viewer-image-wrap">
+      <button type="button" class="viewer-nav viewer-prev" id="btn-viewer-prev">‹</button>
+      <img id="viewer-img" class="viewer-img" alt="" />
+      <button type="button" class="viewer-nav viewer-next" id="btn-viewer-next">›</button>
+    </div>
+    <div class="viewer-caption mono" id="viewer-caption"></div>
+  </div>
+</dialog>
+
+<dialog id="dlg-edit">
+  <div class="dialog-inner">
+    <h2>投稿を編集</h2>
+    <div class="field">
+      <label>タイトル</label>
+      <input type="text" id="e-title" />
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>カテゴリ</label>
+        <select id="e-category">
+          <option value="photo">写真</option>
+          <option value="illustration">イラスト</option>
+          <option value="comic">漫画</option>
+          <option value="anime">アニメ</option>
+          <option value="video">ビデオ</option>
+          <option value="magazine">雑誌</option>
+          <option value="movie">映画</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>制作日(わかる範囲で)</label>
+        <input type="date" id="e-date" />
+      </div>
+    </div>
+    <div class="field">
+      <label>制作日の精度</label>
+      <select id="e-date-precision">
+        <option value="unknown">不明</option>
+        <option value="year">年のみ</option>
+        <option value="month">年月</option>
+        <option value="day">年月日</option>
+      </select>
+    </div>
+    <div class="checkrow"><input type="checkbox" id="e-liked" /> <label for="e-liked">いいね</label></div>
+    <div class="checkrow" id="e-owned-wrap" style="display:none;">
+      <input type="checkbox" id="e-owned" /> <label for="e-owned">実体を所有している</label>
+    </div>
+
+    <div class="field">
+      <label>内容タグ</label>
+      <div id="e-content-tags-wrap"></div>
+    </div>
+    <div class="field">
+      <label>人物タグ</label>
+      <div id="e-person-tags-wrap"></div>
+    </div>
+    <div class="field">
+      <label>作者タグ</label>
+      <div id="e-creator-tags-wrap"></div>
+    </div>
+
+    <div class="field">
+      <label>コメント</label>
+      <textarea id="e-comment" rows="3" autocomplete="off"></textarea>
+    </div>
+    <div class="field">
+      <label>引用元URL</label>
+      <input type="text" id="e-source-url" autocomplete="off" placeholder="https://..." />
+    </div>
+
+    <div class="field">
+      <label>画像 (追加・削除・並び替え・カバー変更はすぐに反映されます)</label>
+      <div id="e-images"></div>
+      <div style="display:flex; gap:6px; margin-top:6px;">
+        <button type="button" class="ghost small" id="btn-e-open-picker">OneDriveから選択</button>
+        <button type="button" class="ghost small" id="btn-e-add-image">＋ 手入力で追加</button>
+      </div>
+    </div>
+
+    <div class="field" style="border-top:1px solid var(--rule); padding-top:14px;">
+      <label>使用回数・削除</label>
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <span class="mono" id="e-usage-count" style="font-size:13px;">使用0回</span>
+        <button type="button" class="ghost small" id="btn-e-usage-minus">使用－1</button>
+        <button type="button" class="ghost small" id="btn-e-usage-plus">使用＋1</button>
+        <button type="button" class="danger small" id="btn-e-delete">論理削除</button>
+        <button type="button" class="ghost small" id="btn-e-restore" style="display:none;">復元</button>
+      </div>
+    </div>
+
+    <div class="dialog-actions">
+      <button type="button" class="ghost" id="btn-edit-cancel">閉じる</button>
+      <button type="button" id="btn-edit-save">タイトル/タグなどを保存</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="dlg-confirm">
+  <div class="dialog-inner">
+    <h2 id="confirm-title">確認</h2>
+    <p id="confirm-message" style="font-size:13px;color:var(--ink-soft);margin:0;"></p>
+    <div class="dialog-actions">
+      <button type="button" class="ghost" id="btn-confirm-cancel">キャンセル</button>
+      <button type="button" class="danger" id="btn-confirm-ok">実行する</button>
+    </div>
+  </div>
+</dialog>
+
 <script type="module">
   import {
-    createPost, searchPosts, softDeletePost, restorePost, incrementUsageCount,
+    createPost, searchPosts, softDeletePost, restorePost, incrementUsageCount, decrementUsageCount, listImages,
+    updatePost, replaceTags, addImages, setCoverImage, deleteImage, reorderImages, getPost, searchTags,
     signInWithMagicLink, signOut, getCurrentSession, onAuthStateChange,
   } from './api.js';
   import {
-    getOneDriveAccount, signInOneDrive, getMyDriveId, listFolder, getThumbnailUrl,
+    getOneDriveAccount, signInOneDrive, getMyDriveId, listFolder, getThumbnailUrl, getDownloadUrl,
   } from './onedrive.js';
 
-  const CATEGORY_LABEL = { photo: '写', illustration: '絵', video: 'ビ', magazine: '誌', movie: '映' };
-  const CATEGORY_NAME  = { photo: '写真', illustration: 'イラスト', video: 'ビデオ', magazine: '雑誌', movie: '映画' };
+  const CATEGORY_LABEL = { photo: '写', illustration: '絵', comic: '漫', anime: '動', video: 'ビ', magazine: '誌', movie: '映' };
+  const CATEGORY_NAME  = { photo: '写真', illustration: 'イラスト', comic: '漫画', anime: 'アニメ', video: 'ビデオ', magazine: '雑誌', movie: '映画' };
 
   const resultsEl = document.getElementById('results');
   const countEl = document.getElementById('result-count');
@@ -390,11 +648,135 @@
     return value.split(',').map((s) => s.trim()).filter(Boolean);
   }
 
+  // "foo.bar.png" -> "foo.bar" のように最後の拡張子だけを取り除く
+  function stripExtension(filename) {
+    const idx = filename.lastIndexOf('.');
+    return idx > 0 ? filename.slice(0, idx) : filename;
+  }
+
+  // タグのチップ入力(namespace内の既存タグを候補に出す。重複追加は自動で無視)。
+  // input要素はブラウザの入力履歴オートコンプリートを autocomplete="off" で止めている。
+  function createTagChipInput(containerEl, namespace) {
+    let tags = [];
+    containerEl.innerHTML = `
+      <div class="tag-chip-input-box">
+        <div class="tag-chip-list"></div>
+        <div class="tag-suggest-wrap">
+          <input type="text" class="mono" autocomplete="off" placeholder="タグを入力してEnter" />
+          <div class="tag-suggest-list" style="display:none;"></div>
+        </div>
+      </div>
+    `;
+    const chipListEl = containerEl.querySelector('.tag-chip-list');
+    const inputEl = containerEl.querySelector('input[type="text"]');
+    const suggestEl = containerEl.querySelector('.tag-suggest-list');
+
+    function renderChips() {
+      chipListEl.innerHTML = tags
+        .map((t, i) => `<span class="tag-chip">${t}<button type="button" data-i="${i}">×</button></span>`)
+        .join('');
+      chipListEl.querySelectorAll('button').forEach((btn) => {
+        btn.onclick = () => {
+          tags.splice(Number(btn.dataset.i), 1);
+          renderChips();
+        };
+      });
+    }
+
+    function hideSuggest() {
+      suggestEl.style.display = 'none';
+      suggestEl.innerHTML = '';
+    }
+
+    function addTag(name) {
+      const trimmed = name.trim();
+      if (trimmed && !tags.includes(trimmed)) tags.push(trimmed);
+      inputEl.value = '';
+      hideSuggest();
+      renderChips();
+    }
+
+    let debounceTimer = null;
+    inputEl.addEventListener('input', () => {
+      const query = inputEl.value.trim();
+      clearTimeout(debounceTimer);
+      if (!query) { hideSuggest(); return; }
+      debounceTimer = setTimeout(async () => {
+        let results;
+        try {
+          results = await searchTags(namespace, query, 8);
+        } catch {
+          return;
+        }
+        const filtered = results.filter((r) => !tags.includes(r.name));
+        if (filtered.length === 0) { hideSuggest(); return; }
+        suggestEl.innerHTML = filtered
+          .map((r) => `<div class="tag-suggest-item">${r.name}</div>`)
+          .join('');
+        suggestEl.style.display = '';
+        suggestEl.querySelectorAll('.tag-suggest-item').forEach((el) => {
+          el.onmousedown = (e) => { e.preventDefault(); addTag(el.textContent); };
+        });
+      }, 200);
+    });
+
+    inputEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ',') {
+        e.preventDefault();
+        addTag(inputEl.value);
+      } else if (e.key === 'Backspace' && inputEl.value === '' && tags.length > 0) {
+        tags.pop();
+        renderChips();
+      }
+    });
+    inputEl.addEventListener('blur', () => {
+      // クリック選択(mousedown)より先にblurが走ってしまわないよう少し待つ
+      setTimeout(hideSuggest, 150);
+    });
+
+    return {
+      getTags: () => [...tags],
+      setTags: (newTags) => { tags = [...(newTags || [])]; renderChips(); },
+    };
+  }
+
+  const nContentTags = createTagChipInput(document.getElementById('n-content-tags-wrap'), 'content');
+  const nPersonTags  = createTagChipInput(document.getElementById('n-person-tags-wrap'), 'person');
+  const nCreatorTags = createTagChipInput(document.getElementById('n-creator-tags-wrap'), 'creator');
+  const eContentTags = createTagChipInput(document.getElementById('e-content-tags-wrap'), 'content');
+  const ePersonTags  = createTagChipInput(document.getElementById('e-person-tags-wrap'), 'person');
+  const eCreatorTags = createTagChipInput(document.getElementById('e-creator-tags-wrap'), 'creator');
+  const fContentTags = createTagChipInput(document.getElementById('f-content-tags-wrap'), 'content');
+  const fPersonTags  = createTagChipInput(document.getElementById('f-person-tags-wrap'), 'person');
+  const fCreatorTags = createTagChipInput(document.getElementById('f-creator-tags-wrap'), 'creator');
+
   function fmtDate(d, precision) {
     if (!d) return '制作日不明';
     if (precision === 'year') return d.slice(0, 4) + '年頃';
     if (precision === 'month') return d.slice(0, 7).replace('-', '年') + '月頃';
     return d;
+  }
+
+  // ---- 確認モーダル ----
+  const dlgConfirm = document.getElementById('dlg-confirm');
+  const confirmMessageEl = document.getElementById('confirm-message');
+  const btnConfirmOk = document.getElementById('btn-confirm-ok');
+  const btnConfirmCancel = document.getElementById('btn-confirm-cancel');
+
+  function confirmAction(message) {
+    confirmMessageEl.textContent = message;
+    dlgConfirm.showModal();
+    return new Promise((resolve) => {
+      function cleanup() {
+        dlgConfirm.close();
+        btnConfirmOk.removeEventListener('click', onOk);
+        btnConfirmCancel.removeEventListener('click', onCancel);
+      }
+      function onOk() { cleanup(); resolve(true); }
+      function onCancel() { cleanup(); resolve(false); }
+      btnConfirmOk.addEventListener('click', onOk);
+      btnConfirmCancel.addEventListener('click', onCancel);
+    });
   }
 
   function renderCard(post) {
@@ -406,31 +788,47 @@
       <div class="card-body">
         <div class="card-title">${post.is_liked ? '♥ ' : ''}${post.title}</div>
         <div class="card-meta mono">
-          ${CATEGORY_NAME[post.category]} ・ ${post.is_illustration ? 'イラスト' : '実写'} ・
+          ${CATEGORY_NAME[post.category]} ・
           ${fmtDate(post.production_date, post.production_date_precision)} ・
           使用${post.usage_count}回
+          ${post.is_owned === true ? ' ・ 所有' : post.is_owned === false ? ' ・ 未所有' : ''}
+          ${post.deleted_at ? ' ・ 削除済み' : ''}
         </div>
         <div class="tags">
           ${(post.content_tags || []).filter(Boolean).map((t) => `<span class="tag">${t}</span>`).join('')}
           ${(post.person_tags || []).filter(Boolean).map((t) => `<span class="tag person">${t}</span>`).join('')}
           ${(post.creator_tags || []).filter(Boolean).map((t) => `<span class="tag creator">${t}</span>`).join('')}
         </div>
+        ${post.comment ? `<div class="card-comment">${post.comment}</div>` : ''}
+        ${post.source_url ? `
+          <div class="card-source">
+            <span class="mono card-source-url">${post.source_url}</span>
+            <button type="button" class="copy-btn" data-action="copy-url" title="URLをコピー">⧉</button>
+          </div>
+        ` : ''}
         <div class="card-actions">
-          <button class="small ghost" data-action="use">使用+1</button>
-          ${post.deleted_at
-            ? '<button class="small ghost" data-action="restore">復元</button>'
-            : '<button class="small danger" data-action="delete">論理削除</button>'}
+          <button class="small ghost" data-action="view">見る</button>
+          <button class="small ghost" data-action="edit">編集</button>
         </div>
       </div>
     `;
-    el.querySelector('[data-action="use"]').onclick = async () => {
-      await incrementUsageCount(post.id);
-      runSearch();
-    };
-    const delBtn = el.querySelector('[data-action="delete"]');
-    if (delBtn) delBtn.onclick = async () => { await softDeletePost(post.id); runSearch(); };
-    const restoreBtn = el.querySelector('[data-action="restore"]');
-    if (restoreBtn) restoreBtn.onclick = async () => { await restorePost(post.id); runSearch(); };
+    el.querySelector('[data-action="view"]').onclick = () => openViewer(post.id);
+    el.querySelector('[data-action="edit"]').onclick = () => openEditDialog(post);
+    const coverEl = el.querySelector('.cover');
+    coverEl.style.cursor = 'pointer';
+    coverEl.onclick = () => openViewer(post.id);
+    const copyBtn = el.querySelector('[data-action="copy-url"]');
+    if (copyBtn) {
+      copyBtn.onclick = async () => {
+        try {
+          await navigator.clipboard.writeText(post.source_url);
+          copyBtn.textContent = '✓';
+          setTimeout(() => { copyBtn.textContent = '⧉'; }, 1200);
+        } catch {
+          alert('コピーに失敗しました');
+        }
+      };
+    }
     return el;
   }
 
@@ -447,7 +845,7 @@
       return;
     }
     try {
-      const url = await getThumbnailUrl(post.cover_drive_id, post.cover_item_id, 'medium');
+      const url = await getThumbnailUrl(post.cover_drive_id, post.cover_item_id, 'large');
       if (url) {
         coverDiv.style.backgroundImage = `url(${url})`;
         coverDiv.style.backgroundSize = 'cover';
@@ -464,14 +862,14 @@
   async function runSearch() {
     const filters = {
       titleQuery: document.getElementById('f-title').value,
-      category: document.getElementById('f-category').value || null,
-      isIllustration: document.getElementById('f-illustration').value === ''
-        ? null : document.getElementById('f-illustration').value === 'true',
+      categories: [...document.querySelectorAll('#f-category-group input:checked')].map((el) => el.value),
       isLiked: document.getElementById('f-liked').checked ? true : null,
+      isOwned: document.getElementById('f-owned').value === ''
+        ? null : document.getElementById('f-owned').value === 'true',
       includeDeleted: document.getElementById('f-deleted').checked,
-      contentTags: splitTags(document.getElementById('f-content-tags').value),
-      personTags: splitTags(document.getElementById('f-person-tags').value),
-      creatorTags: splitTags(document.getElementById('f-creator-tags').value),
+      contentTags: fContentTags.getTags(),
+      personTags: fPersonTags.getTags(),
+      creatorTags: fCreatorTags.getTags(),
       sortBy: document.getElementById('f-sort').value,
     };
     const posts = await searchPosts(filters);
@@ -486,9 +884,48 @@
 
   document.getElementById('btn-search').onclick = runSearch;
 
+  document.getElementById('btn-clear').onclick = () => {
+    document.getElementById('f-title').value = '';
+    document.querySelectorAll('#f-category-group input:checked').forEach((el) => (el.checked = false));
+    document.getElementById('f-owned').value = '';
+    document.getElementById('f-liked').checked = false;
+    document.getElementById('f-deleted').checked = false;
+    document.getElementById('f-sort').value = 'updated_at';
+    fContentTags.setTags([]);
+    fPersonTags.setTags([]);
+    fCreatorTags.setTags([]);
+    countEl.textContent = '-';
+    resultsEl.innerHTML = '';
+  };
+
   // ---- 新規登録ダイアログ ----
   const dlg = document.getElementById('dlg-new');
-  document.getElementById('btn-new').onclick = () => dlg.showModal();
+
+  function resetCreateForm() {
+    dlg.querySelectorAll('input[type="text"], input[type="date"]').forEach((i) => (i.value = ''));
+    document.getElementById('n-category').value = 'photo';
+    document.getElementById('n-date-precision').value = 'unknown';
+    document.getElementById('n-liked').checked = false;
+    document.getElementById('n-owned').checked = false;
+    document.getElementById('n-comment').value = '';
+    document.getElementById('n-images').innerHTML = '';
+    nContentTags.setTags([]);
+    nPersonTags.setTags([]);
+    nCreatorTags.setTags([]);
+    toggleOwnedWrap('n-category', 'n-owned-wrap');
+  }
+
+  document.getElementById('btn-new').onclick = () => {
+    resetCreateForm();
+    dlg.showModal();
+  };
+
+  function toggleOwnedWrap(categorySelectId, wrapId) {
+    const wrap = document.getElementById(wrapId);
+    wrap.style.display = document.getElementById(categorySelectId).value === 'video' ? '' : 'none';
+  }
+  document.getElementById('n-category').onchange = () => toggleOwnedWrap('n-category', 'n-owned-wrap');
+  toggleOwnedWrap('n-category', 'n-owned-wrap');
   document.getElementById('btn-cancel').onclick = () => dlg.close();
 
   function addImageRow(preset) {
@@ -496,6 +933,7 @@
     const wrap = document.createElement('div');
     wrap.className = 'image-row';
     wrap.innerHTML = `
+      <img class="picker-thumb" />
       <label style="display:flex;align-items:center;gap:3px;font-size:11px;color:var(--ink-soft);white-space:nowrap;">
         <input type="radio" name="cover" title="カバーに設定" ${isFirst ? 'checked' : ''} /> カバー
       </label>
@@ -508,6 +946,12 @@
       wrap.querySelector('.img-drive').value = preset.driveId;
       wrap.querySelector('.img-item').value = preset.itemId;
       wrap.querySelector('.img-name').textContent = preset.name ?? '';
+      getOneDriveAccount().then((account) => {
+        if (!account) return;
+        getThumbnailUrl(preset.driveId, preset.itemId, 'small').then((url) => {
+          if (url) wrap.querySelector('.picker-thumb').src = url;
+        });
+      });
     }
     wrap.querySelector('[data-action="remove"]').onclick = () => wrap.remove();
     document.getElementById('n-images').appendChild(wrap);
@@ -528,21 +972,23 @@
     await createPost({
       title: document.getElementById('n-title').value.trim(),
       category: document.getElementById('n-category').value,
-      isIllustration: document.getElementById('n-illustration').value === 'true',
       isLiked: document.getElementById('n-liked').checked,
+      isOwned: document.getElementById('n-category').value === 'video'
+        ? document.getElementById('n-owned').checked : null,
       productionDate: document.getElementById('n-date').value || null,
       productionDatePrecision: document.getElementById('n-date-precision').value,
+      comment: document.getElementById('n-comment').value.trim() || null,
+      sourceUrl: document.getElementById('n-source-url').value.trim() || null,
       images,
       tags: {
-        content: splitTags(document.getElementById('n-content-tags').value),
-        person: splitTags(document.getElementById('n-person-tags').value),
-        creator: splitTags(document.getElementById('n-creator-tags').value),
+        content: nContentTags.getTags(),
+        person: nPersonTags.getTags(),
+        creator: nCreatorTags.getTags(),
       },
     });
 
     dlg.close();
-    dlg.querySelector('.dialog-inner').querySelectorAll('input[type="text"], input[type="date"]').forEach((i) => (i.value = ''));
-    document.getElementById('n-images').innerHTML = '';
+    resetCreateForm();
     runSearch();
   };
 
@@ -591,6 +1037,7 @@
 
   // SupabaseはタブがフォーカスからSIGNED_INを再度発火することがあるため、
   // イベント名ではなく「サインイン中のユーザーIDが実際に変わったか」で判定する。
+  // (ページロード時は自動検索しない。検索は「検索する」ボタンを押した時だけ実行する)
   let lastSignedInUserId = null;
   onAuthStateChange((event, session) => {
     renderAuthArea(session);
@@ -601,7 +1048,6 @@
     const currentUserId = session?.user?.id ?? null;
     if (currentUserId && currentUserId !== lastSignedInUserId) {
       lastSignedInUserId = currentUserId;
-      runSearch();
     }
   });
   renderAuthArea(await getCurrentSession());
@@ -642,19 +1088,41 @@
   let pickerStack = [{ id: null, name: 'ルート' }];
   let pickerSelection = new Map();
   let pickerDriveId = null;
+  let pickerOnConfirm = null; // (selections: {driveId,itemId,name}[]) => void
 
-  document.getElementById('btn-open-picker').onclick = async () => {
+  async function openPicker(onConfirm) {
     const account = await getOneDriveAccount();
     if (!account) {
       alert('先にヘッダーの「OneDriveに接続」からログインしてください');
       return;
     }
+    pickerOnConfirm = onConfirm;
     pickerStack = [{ id: null, name: 'ルート' }];
     pickerSelection = new Map();
     dlgPicker.showModal();
     await renderPickerFolder();
-  };
+  }
+
+  document.getElementById('btn-open-picker').onclick = () => openPicker((selections) => {
+    const titleInput = document.getElementById('n-title');
+    if (!titleInput.value.trim() && selections[0]?.name) {
+      titleInput.value = stripExtension(selections[0].name);
+    }
+    selections.forEach((sel) => addImageRow(sel));
+  });
   document.getElementById('btn-picker-cancel').onclick = () => dlgPicker.close();
+
+  // 現在表示しているフォルダ内の画像だけをまとめて選択/解除する
+  document.getElementById('btn-picker-select-all').onclick = () => {
+    pickerList.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+      if (!cb.checked) cb.click();
+    });
+  };
+  document.getElementById('btn-picker-clear').onclick = () => {
+    pickerList.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+      if (cb.checked) cb.click();
+    });
+  };
 
   async function renderPickerFolder() {
     pickerBreadcrumb.textContent = pickerStack.map((s) => s.name).join(' / ');
@@ -711,11 +1179,231 @@
   }
 
   document.getElementById('btn-picker-add').onclick = () => {
-    for (const sel of pickerSelection.values()) addImageRow(sel);
+    const selections = [...pickerSelection.values()];
+    if (pickerOnConfirm) pickerOnConfirm(selections);
     dlgPicker.close();
   };
 
-  addImageRow();
+  // ---- 投稿の編集ダイアログ ----
+  const dlgEdit = document.getElementById('dlg-edit');
+  let editPostId = null;
+  let editImages = [];
+  document.getElementById('e-category').onchange = () => toggleOwnedWrap('e-category', 'e-owned-wrap');
+
+  function updateUsageDeleteUI(post) {
+    document.getElementById('e-usage-count').textContent = `使用${post.usage_count}回`;
+    document.getElementById('btn-e-delete').style.display = post.deleted_at ? 'none' : '';
+    document.getElementById('btn-e-restore').style.display = post.deleted_at ? '' : 'none';
+  }
+
+  async function openEditDialog(post) {
+    editPostId = post.id;
+    document.getElementById('e-title').value = post.title;
+    document.getElementById('e-category').value = post.category;
+    document.getElementById('e-liked').checked = post.is_liked;
+    document.getElementById('e-owned').checked = post.is_owned === true;
+    toggleOwnedWrap('e-category', 'e-owned-wrap');
+    document.getElementById('e-date').value = post.production_date ?? '';
+    document.getElementById('e-date-precision').value = post.production_date_precision;
+    document.getElementById('e-comment').value = post.comment ?? '';
+    document.getElementById('e-source-url').value = post.source_url ?? '';
+    eContentTags.setTags((post.content_tags || []).filter(Boolean));
+    ePersonTags.setTags((post.person_tags || []).filter(Boolean));
+    eCreatorTags.setTags((post.creator_tags || []).filter(Boolean));
+    updateUsageDeleteUI(post);
+
+    dlgEdit.showModal();
+    await refreshEditImages();
+  }
+
+  async function refreshEditImages() {
+    const [currentPost, images] = await Promise.all([getPost(editPostId), listImages(editPostId)]);
+    editImages = images;
+    const container = document.getElementById('e-images');
+    container.innerHTML = '';
+
+    editImages.forEach((img, idx) => {
+      const row = document.createElement('div');
+      row.className = 'image-row';
+      row.innerHTML = `
+        <img class="picker-thumb" />
+        <label style="display:flex;align-items:center;gap:3px;font-size:11px;color:var(--ink-soft);white-space:nowrap;">
+          <input type="radio" name="e-cover" ${img.id === currentPost.cover_image_id ? 'checked' : ''} /> カバー
+        </label>
+        <span class="img-name mono">${img.onedrive_item_id}</span>
+        <button type="button" class="ghost small" data-action="up">↑</button>
+        <button type="button" class="ghost small" data-action="down">↓</button>
+        <button type="button" class="danger small" data-action="remove">削除</button>
+      `;
+      row.querySelector('input[type="radio"]').onchange = async () => {
+        await setCoverImage(editPostId, img.id);
+        runSearch();
+      };
+      row.querySelector('[data-action="up"]').onclick = async () => {
+        if (idx === 0) return;
+        const ids = editImages.map((i) => i.id);
+        [ids[idx - 1], ids[idx]] = [ids[idx], ids[idx - 1]];
+        await reorderImages(editPostId, ids);
+        await refreshEditImages();
+      };
+      row.querySelector('[data-action="down"]').onclick = async () => {
+        if (idx === editImages.length - 1) return;
+        const ids = editImages.map((i) => i.id);
+        [ids[idx + 1], ids[idx]] = [ids[idx], ids[idx + 1]];
+        await reorderImages(editPostId, ids);
+        await refreshEditImages();
+      };
+      row.querySelector('[data-action="remove"]').onclick = async () => {
+        const ok = await confirmAction('この画像を投稿から外しますか？(OneDrive上のファイルは削除されません)');
+        if (!ok) return;
+        await deleteImage(img.id);
+        await refreshEditImages();
+        runSearch();
+      };
+      container.appendChild(row);
+
+      getOneDriveAccount().then((account) => {
+        if (!account) return;
+        getThumbnailUrl(img.onedrive_drive_id, img.onedrive_item_id, 'small').then((url) => {
+          if (url) row.querySelector('.picker-thumb').src = url;
+        });
+      });
+    });
+  }
+
+  document.getElementById('btn-e-open-picker').onclick = () => openPicker(async (selections) => {
+    if (selections.length === 0) return;
+    const titleInput = document.getElementById('e-title');
+    if (!titleInput.value.trim() && selections[0].name) {
+      titleInput.value = stripExtension(selections[0].name);
+    }
+    const base = editImages.length;
+    await addImages(
+      editPostId,
+      selections.map((sel, i) => ({ driveId: sel.driveId, itemId: sel.itemId, sortOrder: base + i }))
+    );
+    await refreshEditImages();
+    runSearch();
+  });
+
+  document.getElementById('btn-e-add-image').onclick = async () => {
+    const driveId = prompt('driveIdを入力してください');
+    if (!driveId) return;
+    const itemId = prompt('itemIdを入力してください');
+    if (!itemId) return;
+    await addImages(editPostId, [{ driveId: driveId.trim(), itemId: itemId.trim(), sortOrder: editImages.length }]);
+    await refreshEditImages();
+    runSearch();
+  };
+
+  document.getElementById('btn-edit-save').onclick = async () => {
+    await updatePost(editPostId, {
+      title: document.getElementById('e-title').value.trim(),
+      category: document.getElementById('e-category').value,
+      isLiked: document.getElementById('e-liked').checked,
+      isOwned: document.getElementById('e-category').value === 'video'
+        ? document.getElementById('e-owned').checked : null,
+      productionDate: document.getElementById('e-date').value || null,
+      productionDatePrecision: document.getElementById('e-date-precision').value,
+      comment: document.getElementById('e-comment').value.trim() || null,
+      sourceUrl: document.getElementById('e-source-url').value.trim() || null,
+    });
+    await replaceTags(editPostId, {
+      content: eContentTags.getTags(),
+      person: ePersonTags.getTags(),
+      creator: eCreatorTags.getTags(),
+    });
+    dlgEdit.close();
+    runSearch();
+  };
+  document.getElementById('btn-edit-cancel').onclick = () => dlgEdit.close();
+
+  document.getElementById('btn-e-usage-plus').onclick = async () => {
+    await incrementUsageCount(editPostId);
+    updateUsageDeleteUI(await getPost(editPostId));
+    runSearch();
+  };
+  document.getElementById('btn-e-usage-minus').onclick = async () => {
+    await decrementUsageCount(editPostId);
+    updateUsageDeleteUI(await getPost(editPostId));
+    runSearch();
+  };
+  document.getElementById('btn-e-delete').onclick = async () => {
+    const ok = await confirmAction('この投稿を削除しますか？(あとで復元できます)');
+    if (!ok) return;
+    await softDeletePost(editPostId);
+    dlgEdit.close();
+    runSearch();
+  };
+  document.getElementById('btn-e-restore').onclick = async () => {
+    await restorePost(editPostId);
+    dlgEdit.close();
+    runSearch();
+  };
+
+  // ---- 画像ビューアー ----
+  const dlgViewer = document.getElementById('dlg-viewer');
+  const viewerImg = document.getElementById('viewer-img');
+  const viewerCaption = document.getElementById('viewer-caption');
+  const viewerPrevBtn = document.getElementById('btn-viewer-prev');
+  const viewerNextBtn = document.getElementById('btn-viewer-next');
+  let viewerImages = [];
+  let viewerIndex = 0;
+
+  async function openViewer(postId) {
+    const account = await getOneDriveAccount();
+    if (!account) {
+      alert('先にヘッダーの「OneDriveに接続」からログインしてください');
+      return;
+    }
+    const images = await listImages(postId);
+    if (images.length === 0) {
+      alert('この投稿には画像が登録されていません');
+      return;
+    }
+    viewerImages = images;
+    viewerIndex = 0;
+    const showNav = viewerImages.length > 1;
+    viewerPrevBtn.style.display = showNav ? '' : 'none';
+    viewerNextBtn.style.display = showNav ? '' : 'none';
+    dlgViewer.showModal();
+    renderViewerImage();
+  }
+
+  async function renderViewerImage() {
+    const img = viewerImages[viewerIndex];
+    viewerCaption.textContent = `${viewerIndex + 1} / ${viewerImages.length}`;
+    viewerImg.removeAttribute('src');
+    viewerImg.alt = '読み込み中…';
+    try {
+      const url = await getDownloadUrl(img.onedrive_drive_id, img.onedrive_item_id);
+      if (url) {
+        viewerImg.src = url;
+        viewerImg.alt = '';
+      } else {
+        viewerImg.alt = '画像を取得できませんでした';
+      }
+    } catch {
+      viewerImg.alt = '画像を取得できませんでした';
+    }
+  }
+
+  viewerPrevBtn.onclick = () => {
+    viewerIndex = (viewerIndex - 1 + viewerImages.length) % viewerImages.length;
+    renderViewerImage();
+  };
+  viewerNextBtn.onclick = () => {
+    viewerIndex = (viewerIndex + 1) % viewerImages.length;
+    renderViewerImage();
+  };
+  document.getElementById('btn-viewer-close').onclick = () => dlgViewer.close();
+
+  // ダイアログ表示中は矢印キーで前後の画像に移動できるようにする
+  document.addEventListener('keydown', (e) => {
+    if (!dlgViewer.open) return;
+    if (e.key === 'ArrowLeft') viewerPrevBtn.click();
+    if (e.key === 'ArrowRight') viewerNextBtn.click();
+  });
 </script>
 
 </body>

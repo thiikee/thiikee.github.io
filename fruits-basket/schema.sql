@@ -1,17 +1,49 @@
 -- ============================================
 -- 画像/投稿管理 スキーマ (Supabase / PostgreSQL)
+--
+-- このファイルは「クリーンインストール」用です。
+-- 上から下まで実行すると、既存の同名オブジェクトを全て削除してから
+-- ゼロから作り直します。既存データは全て失われるので注意してください。
 -- ============================================
+
+-- ---------- 既存オブジェクトの削除(依存関係の都合上、関数→ビュー→テーブル→型 の順) ----------
+
+drop function if exists search_posts(
+  text, post_category[], boolean, boolean, text[], text[], text[], boolean, text, boolean, integer, integer
+);
+drop function if exists search_posts; -- 引数が変わっていても名前だけで消せる場合はこちらでフォールバック
+drop function if exists increment_usage_count(uuid);
+drop function if exists adjust_usage_count(uuid, integer);
+drop function if exists set_updated_at() cascade;
+
+drop view if exists post_tags_expanded;
+drop view if exists active_posts;
+
+drop table if exists post_tags cascade;
+drop table if exists images cascade;
+drop table if exists tags cascade;
+drop table if exists posts cascade;
+
+drop type if exists post_category cascade;
+drop type if exists tag_namespace cascade;
+drop type if exists date_precision cascade;
+
+-- ---------- 拡張機能 ----------
 
 create extension if not exists pg_trgm;
 create extension if not exists "uuid-ossp";
 
+-- ---------- 型定義 ----------
+
 -- 投稿の大分類
 create type post_category as enum (
-  'photo',
-  'illustration',
-  'video',
-  'magazine',
-  'movie'
+  'photo',         -- 写真
+  'illustration',  -- イラスト
+  'comic',         -- 漫画
+  'anime',         -- アニメ
+  'video',         -- ビデオ
+  'magazine',      -- 雑誌
+  'movie'          -- 映画
 );
 
 -- タグの名前空間(内容タグ / 人物タグ / 作者タグ を明確に分離)
@@ -25,13 +57,19 @@ create table posts (
   id              uuid primary key default uuid_generate_v4(),
   title           text not null,
   category        post_category not null,
-  is_illustration boolean not null default false, -- 実写/イラストの区別(categoryとは独立の軸)
-  is_liked        boolean not null default false, -- 「いいね」フラグ
 
   production_date           date,                          -- その画像が制作された過去の日付
   production_date_precision date_precision not null default 'unknown',
 
+  is_liked        boolean not null default false, -- 「いいね」フラグ
+
+  -- categoryがvideoの場合にのみ使う想定。それ以外はNULL(該当なし)のままでよい。
+  is_owned        boolean,                       -- ビデオ作品の実体を所有しているか
+
   usage_count     integer not null default 0,   -- 素材として使った回数
+
+  comment         text,                          -- 自由記述のコメント(単一)
+  source_url      text,                          -- 投稿の引用元URL(単一)
 
   created_at      timestamptz not null default now(),  -- レコード作成日時
   updated_at      timestamptz not null default now(),  -- レコード更新日時
@@ -44,6 +82,7 @@ create index idx_posts_title_trgm on posts using gin (title gin_trgm_ops);
 create index idx_posts_deleted_at on posts (deleted_at);
 create index idx_posts_category on posts (category);
 create index idx_posts_owner on posts (owner_id);
+create index idx_posts_is_liked on posts (is_liked) where is_liked;
 
 -- ---------- images (1投稿に複数画像、シリーズものに対応) ----------
 create table images (
@@ -71,7 +110,6 @@ alter table posts
   add column cover_image_id uuid references images(id) on delete set null;
 
 create index idx_posts_cover_image on posts (cover_image_id);
-create index idx_posts_is_liked on posts (is_liked) where is_liked;
 
 -- ---------- tags (内容/人物/作者の3系統を1テーブルで管理) ----------
 create table tags (
@@ -143,24 +181,24 @@ create policy "own post_tags" on post_tags
     exists (select 1 from posts p where p.id = post_tags.post_id and p.owner_id = auth.uid())
   );
 
--- ---------- 使用回数のインクリメント用関数(素材として使ったら呼ぶ) ----------
-create or replace function increment_usage_count(target_post_id uuid)
+-- ---------- 使用回数の増減用関数(delta=1で+1、delta=-1で-1。0未満にはならない) ----------
+create or replace function adjust_usage_count(target_post_id uuid, delta integer)
 returns void as $$
 begin
-  update posts set usage_count = usage_count + 1 where id = target_post_id;
+  update posts
+  set usage_count = greatest(usage_count + delta, 0)
+  where id = target_post_id;
 end;
 $$ language plpgsql security definer;
 
 -- ---------- 検索用RPC ----------
 -- content_tags_all / person_tags_all / creator_tags_all は「すべて含む(AND)」条件。
--- 空配列を渡せばそのタグ種別は絞り込み対象外になる。
-drop function if exists search_posts;
-
+-- p_categories は「いずれかに一致(OR)」条件。空配列を渡せばその条件は絞り込み対象外になる。
 create or replace function search_posts(
   title_query       text default null,
-  p_category        post_category default null,
-  p_is_illustration boolean default null,
+  p_categories      post_category[] default '{}',
   p_is_liked        boolean default null,
+  p_is_owned        boolean default null,
   content_tags_all  text[] default '{}',
   person_tags_all   text[] default '{}',
   creator_tags_all  text[] default '{}',
@@ -174,11 +212,13 @@ returns table (
   id                         uuid,
   title                      text,
   category                   post_category,
-  is_illustration            boolean,
   is_liked                   boolean,
+  is_owned                   boolean,
   production_date            date,
   production_date_precision date_precision,
   usage_count                integer,
+  comment                    text,
+  source_url                 text,
   created_at                 timestamptz,
   updated_at                 timestamptz,
   deleted_at                 timestamptz,
@@ -194,8 +234,9 @@ stable
 security invoker
 as $$
   select
-    p.id, p.title, p.category, p.is_illustration, p.is_liked,
+    p.id, p.title, p.category, p.is_liked, p.is_owned,
     p.production_date, p.production_date_precision, p.usage_count,
+    p.comment, p.source_url,
     p.created_at, p.updated_at, p.deleted_at, p.cover_image_id,
     ci.onedrive_drive_id, ci.onedrive_item_id,
     pte.content_tags, pte.person_tags, pte.creator_tags
@@ -205,9 +246,9 @@ as $$
   where p.owner_id = auth.uid()
     and (include_deleted or p.deleted_at is null)
     and (title_query is null or title_query = '' or p.title ilike '%' || title_query || '%')
-    and (p_category is null or p.category = p_category)
-    and (p_is_illustration is null or p.is_illustration = p_is_illustration)
+    and (cardinality(p_categories) = 0 or p.category = any(p_categories))
     and (p_is_liked is null or p.is_liked = p_is_liked)
+    and (p_is_owned is null or p.is_owned = p_is_owned)
     and (content_tags_all = '{}' or coalesce(pte.content_tags, '{}') @> content_tags_all)
     and (person_tags_all  = '{}' or coalesce(pte.person_tags,  '{}') @> person_tags_all)
     and (creator_tags_all = '{}' or coalesce(pte.creator_tags, '{}') @> creator_tags_all)
