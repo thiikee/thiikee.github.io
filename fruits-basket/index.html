@@ -221,24 +221,8 @@
     padding: 8px;
   }
 
-  .stamp {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 34px;
-    height: 34px;
-    border: 2px dashed var(--navy);
-    border-radius: 50%;
-    color: var(--navy);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Noto Serif JP', serif;
-    font-weight: 700;
-    font-size: 15px;
-    transform: rotate(-10deg);
-    background: rgba(247, 245, 238, 0.85);
-  }
+  .card.is-owned { background: #E7EFE1; border-color: #9AB98C; }
+  .card.is-not-owned { background: #F5EDE0; border-color: #C9A968; }
 
   .card-body { padding: 12px; }
   .card-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
@@ -421,6 +405,9 @@
       <button id="btn-new">＋ 新規登録</button>
     </div>
     <div class="grid" id="results"></div>
+    <div style="text-align:center; margin-top:20px;">
+      <button id="btn-load-more" class="ghost" style="display:none;">もっと読み込む</button>
+    </div>
   </main>
 </div>
 
@@ -638,7 +625,6 @@
     getOneDriveAccount, signInOneDrive, getMyDriveId, listFolder, getThumbnailUrl, getDownloadUrl,
   } from './onedrive.js';
 
-  const CATEGORY_LABEL = { photo: '写', illustration: '絵', comic: '漫', anime: '動', video: 'ビ', magazine: '誌', movie: '映' };
   const CATEGORY_NAME  = { photo: '写真', illustration: 'イラスト', comic: '漫画', anime: 'アニメ', video: 'ビデオ', magazine: '雑誌', movie: '映画' };
 
   const resultsEl = document.getElementById('results');
@@ -781,10 +767,11 @@
 
   function renderCard(post) {
     const el = document.createElement('div');
-    el.className = 'card' + (post.deleted_at ? ' deleted' : '');
+    el.className = 'card'
+      + (post.deleted_at ? ' deleted' : '')
+      + (post.is_owned === true ? ' is-owned' : post.is_owned === false ? ' is-not-owned' : '');
     el.innerHTML = `
       <div class="cover">${post.cover_image_id ? '画像を読み込み中…' : '画像未選択'}</div>
-      <div class="stamp">${CATEGORY_LABEL[post.category] ?? '?'}</div>
       <div class="card-body">
         <div class="card-title">${post.is_liked ? '♥ ' : ''}${post.title}</div>
         <div class="card-meta mono">
@@ -859,8 +846,31 @@
     }
   }
 
+  const PAGE_SIZE = 50;
+  let currentFilters = null;
+  let currentOffset = 0;
+  const loadMoreBtn = document.getElementById('btn-load-more');
+
+  async function loadPage(append) {
+    const posts = await searchPosts({
+      ...currentFilters,
+      limit: PAGE_SIZE,
+      offset: currentOffset,
+    });
+
+    if (!append) resultsEl.innerHTML = '';
+    posts.forEach((p) => {
+      const card = renderCard(p);
+      resultsEl.appendChild(card);
+      attachCoverThumbnail(card, p);
+    });
+
+    countEl.textContent = `${resultsEl.children.length}件読み込み済み`;
+    loadMoreBtn.style.display = posts.length === PAGE_SIZE ? '' : 'none';
+  }
+
   async function runSearch() {
-    const filters = {
+    currentFilters = {
       titleQuery: document.getElementById('f-title').value,
       categories: [...document.querySelectorAll('#f-category-group input:checked')].map((el) => el.value),
       isLiked: document.getElementById('f-liked').checked ? true : null,
@@ -872,17 +882,16 @@
       creatorTags: fCreatorTags.getTags(),
       sortBy: document.getElementById('f-sort').value,
     };
-    const posts = await searchPosts(filters);
-    countEl.textContent = `${posts.length} 件`;
-    resultsEl.innerHTML = '';
-    posts.forEach((p) => {
-      const card = renderCard(p);
-      resultsEl.appendChild(card);
-      attachCoverThumbnail(card, p);
-    });
+    currentOffset = 0;
+    await loadPage(false);
   }
 
   document.getElementById('btn-search').onclick = runSearch;
+
+  loadMoreBtn.onclick = async () => {
+    currentOffset += PAGE_SIZE;
+    await loadPage(true);
+  };
 
   document.getElementById('btn-clear').onclick = () => {
     document.getElementById('f-title').value = '';
@@ -894,6 +903,9 @@
     fContentTags.setTags([]);
     fPersonTags.setTags([]);
     fCreatorTags.setTags([]);
+    currentFilters = null;
+    currentOffset = 0;
+    loadMoreBtn.style.display = 'none';
     countEl.textContent = '-';
     resultsEl.innerHTML = '';
   };
