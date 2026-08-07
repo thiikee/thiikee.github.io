@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>X Archive Viewer</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ログイン画面 -->
+  <div id="login-view" class="login-view">
+    <div class="login-box">
+      <h1 class="site-title">X Archive</h1>
+      <p class="site-subtitle">個人アーカイブビューアー</p>
+      <form id="login-form">
+        <label>
+          メールアドレス
+          <input type="email" id="login-email" required autocomplete="username">
+        </label>
+        <label>
+          パスワード
+          <input type="password" id="login-password" required autocomplete="current-password">
+        </label>
+        <p id="login-error" class="error-text"></p>
+        <button type="submit" class="btn-primary">ログイン</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- メインアプリ -->
+  <div id="app-view" class="app-view">
+    <header class="app-header">
+      <h1 class="site-title-small">X Archive</h1>
+      <nav class="view-tabs">
+        <button class="tab-button active" data-view="timeline">タイムライン</button>
+        <button class="tab-button" data-view="dm">DM(会話別)</button>
+      </nav>
+      <div class="header-actions">
+        <button id="onedrive-connect" class="btn-ghost">OneDriveに接続</button>
+        <button id="logout-button" class="btn-ghost">ログアウト</button>
+      </div>
+    </header>
+
+    <aside class="filter-panel">
+      <form id="search-form">
+        <div class="filter-group">
+          <label for="search-input">キーワード検索</label>
+          <input type="text" id="search-input" placeholder="本文を検索...">
+        </div>
+
+        <div class="filter-group">
+          <span class="filter-label">種別</span>
+          <label class="chip">
+            <input type="checkbox" id="filter-type-original" checked>
+            <span>ツイート</span>
+          </label>
+          <label class="chip">
+            <input type="checkbox" id="filter-type-retweet" checked>
+            <span>リツイート</span>
+          </label>
+          <label class="chip">
+            <input type="checkbox" id="filter-type-reply" checked>
+            <span>返信</span>
+          </label>
+        </div>
+
+        <div class="filter-group">
+          <label for="sort-order">並び順</label>
+          <select id="sort-order">
+            <option value="desc">新しい順</option>
+            <option value="asc">古い順</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <span class="filter-label">アカウント</span>
+          <div id="account-list" class="chip-list"></div>
+        </div>
+
+        <div class="filter-group">
+          <label for="tag-select">タグ(ツイートのみ)</label>
+          <select id="tag-select"></select>
+        </div>
+
+        <div class="filter-group filter-group-inline">
+          <label>
+            <span class="filter-label-inline">開始日</span>
+            <input type="date" id="filter-date-from">
+          </label>
+          <label>
+            <span class="filter-label-inline">終了日</span>
+            <input type="date" id="filter-date-to">
+          </label>
+        </div>
+
+        <div class="filter-group">
+          <label class="chip">
+            <input type="checkbox" id="filter-media-only">
+            <span>メディアのみ</span>
+          </label>
+        </div>
+
+        <button type="submit" class="btn-primary btn-block">検索</button>
+      </form>
+    </aside>
+
+    <div class="content-area">
+      <main class="timeline-container" id="timeline-view">
+        <div id="timeline" class="timeline"></div>
+        <button id="load-more" class="btn-ghost btn-block" style="display:none;">もっと見る</button>
+      </main>
+
+      <main class="dm-view" id="dm-view" style="display:none;">
+        <div class="dm-account-select">
+          <label for="dm-account-select">アカウント</label>
+          <select id="dm-account-select"></select>
+        </div>
+        <div class="dm-layout">
+          <div class="conversation-list" id="conversation-list"></div>
+          <div class="conversation-thread" id="conversation-thread">
+            <p class="empty-state">左の一覧から会話を選んでください。</p>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
