@@ -1,9 +1,28 @@
 import { supabase } from './clients.js';
 
 /**
+ * x_user_handles テーブルから「Xの数値ID → screen_name」のマップを取得する
+ * 手動で登録した分だけ解決され、未登録のIDはそのまま数値で返る
+ */
+export async function fetchHandleMap() {
+  const { data, error } = await supabase.from('x_user_handles').select('x_user_id, screen_name, display_name');
+  if (error) throw error;
+  const map = new Map();
+  (data || []).forEach((row) => {
+    map.set(row.x_user_id, row.display_name || row.screen_name);
+  });
+  return map;
+}
+
+export function resolveHandle(handleMap, xUserId) {
+  if (!xUserId) return '';
+  return handleMap.get(xUserId) ? `@${handleMap.get(xUserId)}` : xUserId;
+}
+
+/**
  * 指定アカウントの会話一覧を、最新メッセージのプレビュー付きで取得する
  */
-export async function fetchConversationsWithPreview(accountId) {
+export async function fetchConversationsWithPreview(accountId, handleMap = new Map()) {
   const { data: conversations, error } = await supabase
     .from('dm_conversations')
     .select('id, conversation_id, is_group, title')
@@ -33,6 +52,7 @@ export async function fetchConversationsWithPreview(accountId) {
         lastMessageText: lastMsg?.text || '(メディアのみ、または本文なし)',
         lastMessageAt: lastMsg?.created_at_x || null,
         participantHandles: (participants || []).map((p) => p.participant_handle),
+        participantDisplayNames: (participants || []).map((p) => resolveHandle(handleMap, p.participant_handle)),
       };
     })
   );

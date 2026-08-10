@@ -1,7 +1,7 @@
 import { supabase, getOneDriveAccessToken, isOneDriveSignedIn, initMsal, TWEET_MEDIA_FOLDER } from './lib/clients.js';
 import { decryptToBlob, blobToDataUrl } from './lib/crypto-browser.js';
 import { fetchAccounts, fetchTags, searchTimeline } from './lib/search.js';
-import { fetchConversationsWithPreview, fetchConversationMessages } from './lib/dm-conversations.js';
+import { fetchConversationsWithPreview, fetchConversationMessages, fetchHandleMap } from './lib/dm-conversations.js';
 
 // ============================================
 // 状態
@@ -325,8 +325,11 @@ function switchView(view) {
 let dmInitialized = false;
 let activeConversationAccount = null;
 
+let handleMapCache = null;
+
 async function initDmView() {
   dmInitialized = true;
+  handleMapCache = await fetchHandleMap();
   const select = el('dm-account-select');
   select.innerHTML = accountsCache.map((a) => `<option value="${a.id}">@${a.handle}</option>`).join('');
   select.addEventListener('change', () => loadConversationList(select.value));
@@ -341,7 +344,7 @@ async function loadConversationList(accountId) {
   const listEl = el('conversation-list');
   listEl.innerHTML = '<p class="empty-state">読み込み中...</p>';
 
-  const conversations = await fetchConversationsWithPreview(accountId);
+  const conversations = await fetchConversationsWithPreview(accountId, handleMapCache);
 
   if (conversations.length === 0) {
     listEl.innerHTML = '<p class="empty-state">会話がありません。</p>';
@@ -352,7 +355,11 @@ async function loadConversationList(accountId) {
     .map((c) => {
       const title = c.is_group
         ? c.title || 'グループDM'
-        : c.participantHandles.filter((h) => h !== activeConversationAccount?.x_account_id).join(', ') || '(相手不明)';
+        : c.participantHandles
+            .map((h, i) => ({ raw: h, display: c.participantDisplayNames[i] }))
+            .filter((p) => p.raw !== activeConversationAccount?.x_account_id)
+            .map((p) => p.display)
+            .join(', ') || '(相手不明)';
       return `
         <button class="conversation-item" data-conversation-id="${c.id}">
           <div class="conversation-item-title">${escapeHtml(title)}</div>
