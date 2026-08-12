@@ -57,11 +57,31 @@ async function getAccessToken() {
 
 // ---------------- Graph API ----------------
 
-async function graphFetch(path) {
+const MAX_RETRY_ON_THROTTLE = 4;
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function graphFetch(path, attempt = 0) {
   const token = await getAccessToken();
   const res = await fetch(`https://graph.microsoft.com/v1.0${path}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
+
+  if (res.status === 429 || res.status === 503) {
+    if (attempt >= MAX_RETRY_ON_THROTTLE) {
+      throw new Error(`Graph APIエラー: ${res.status} (リトライ上限に達しました)`);
+    }
+    // Retry-Afterヘッダー(秒)があればそれに従う。無ければ指数バックオフ+ジッター。
+    const retryAfterHeader = res.headers.get('Retry-After');
+    const waitMs = retryAfterHeader
+      ? Number(retryAfterHeader) * 1000
+      : 500 * 2 ** attempt + Math.random() * 300;
+    await sleep(waitMs);
+    return graphFetch(path, attempt + 1);
+  }
+
   if (!res.ok) {
     throw new Error(`Graph APIエラー: ${res.status} ${await res.text()}`);
   }

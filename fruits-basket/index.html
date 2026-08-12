@@ -338,6 +338,30 @@
   .viewer-next { right: 4px; }
   .viewer-caption { margin-top: 14px; color: #C9C2AE; font-size: 12px; }
 
+  .filmstrip {
+    display: flex;
+    gap: 6px;
+    margin-top: 14px;
+    max-width: 100%;
+    overflow-x: auto;
+    padding: 4px 2px 8px;
+  }
+  .filmstrip-item {
+    flex: 0 0 auto;
+    width: 56px;
+    height: 56px;
+    border-radius: 2px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid transparent;
+    background: rgba(237, 234, 224, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .filmstrip-item.active { border-color: #EDEAE0; }
+  .filmstrip-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
   .image-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
   .image-row input[type="text"] { flex: 1; }
   .image-row .img-name { flex: 1; font-size: 11px; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -525,6 +549,7 @@
       <button type="button" class="viewer-nav viewer-next" id="btn-viewer-next">›</button>
     </div>
     <div class="viewer-caption mono" id="viewer-caption"></div>
+    <div class="filmstrip" id="viewer-filmstrip"></div>
   </div>
 </dialog>
 
@@ -1372,8 +1397,91 @@
   const viewerCaption = document.getElementById('viewer-caption');
   const viewerPrevBtn = document.getElementById('btn-viewer-prev');
   const viewerNextBtn = document.getElementById('btn-viewer-next');
+  const filmstripEl = document.getElementById('viewer-filmstrip');
   let viewerImages = [];
   let viewerIndex = 0;
+
+  // ---- サムネイル取得を同時4件までに制限するキュー(100枚超の投稿でも一気に叩かない) ----
+  const MAX_CONCURRENT_THUMBS = 4;
+  let activeThumbFetches = 0;
+  const thumbQueue = [];
+
+  function enqueueThumbFetch(task) {
+    thumbQueue.push(task);
+    drainThumbQueue();
+  }
+  function drainThumbQueue() {
+    while (activeThumbFetches < MAX_CONCURRENT_THUMBS && thumbQueue.length > 0) {
+      const task = thumbQueue.shift();
+      activeThumbFetches++;
+      task().finally(() => {
+        activeThumbFetches--;
+        drainThumbQueue();
+      });
+    }
+  }
+
+  // 画面内に実際にスクロールで入ってきたコマだけサムネイルを取得する
+  let filmstripObserver = null;
+
+  function buildFilmstrip() {
+    if (filmstripObserver) filmstripObserver.disconnect();
+    filmstripEl.innerHTML = '';
+
+    if (viewerImages.length <= 1) {
+      filmstripEl.style.display = 'none';
+      return;
+    }
+    filmstripEl.style.display = 'flex';
+
+    viewerImages.forEach((img, i) => {
+      const item = document.createElement('div');
+      item.className = 'filmstrip-item' + (i === viewerIndex ? ' active' : '');
+      item.dataset.index = String(i);
+      item.onclick = () => {
+        viewerIndex = i;
+        renderViewerImage();
+      };
+      filmstripEl.appendChild(item);
+    });
+
+    filmstripObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          const item = entry.target;
+          filmstripObserver.unobserve(item);
+          const i = Number(item.dataset.index);
+          const img = viewerImages[i];
+          enqueueThumbFetch(async () => {
+            if (item.dataset.loaded) return;
+            try {
+              const url = img.thumbUrl || (await getThumbnailUrl(img.onedrive_drive_id, img.onedrive_item_id, 'small'));
+              img.thumbUrl = url;
+              if (url) {
+                const thumbImg = document.createElement('img');
+                thumbImg.src = url;
+                item.appendChild(thumbImg);
+              }
+              item.dataset.loaded = '1';
+            } catch {
+              // 取得できなくてもプレースホルダーのままにしておく
+            }
+          });
+        });
+      },
+      { root: filmstripEl, rootMargin: '200px' }
+    );
+    filmstripEl.querySelectorAll('.filmstrip-item').forEach((el) => filmstripObserver.observe(el));
+  }
+
+  function updateFilmstripActive() {
+    filmstripEl.querySelectorAll('.filmstrip-item').forEach((el, i) => {
+      el.classList.toggle('active', i === viewerIndex);
+    });
+    const activeEl = filmstripEl.children[viewerIndex];
+    if (activeEl) activeEl.scrollIntoView({ block: 'nearest', inline: 'center' });
+  }
 
   async function openViewer(postId) {
     const account = await getOneDriveAccount();
@@ -1392,12 +1500,14 @@
     viewerPrevBtn.style.display = showNav ? '' : 'none';
     viewerNextBtn.style.display = showNav ? '' : 'none';
     dlgViewer.showModal();
+    buildFilmstrip();
     renderViewerImage();
   }
 
   async function renderViewerImage() {
     const img = viewerImages[viewerIndex];
     viewerCaption.textContent = `${viewerIndex + 1} / ${viewerImages.length}`;
+    updateFilmstripActive();
     viewerImg.removeAttribute('src');
     viewerImg.alt = '読み込み中…';
     try {
