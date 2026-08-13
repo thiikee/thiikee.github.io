@@ -165,6 +165,41 @@
     overflow-y: auto;
   }
   .tag-suggest-item { padding: 6px 8px; font-size: 12px; cursor: pointer; }
+  .tag-suggest-yomi { color: var(--ink-soft); font-size: 11px; }
+
+  .tm-row {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--rule);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .tm-row:last-child { border-bottom: none; }
+  .tm-row-main { display: flex; align-items: center; gap: 8px; }
+  .tm-row-main .tm-name { flex: 1; font-size: 13px; }
+  .tm-row-main input[type="text"] {
+    width: 140px;
+    padding: 5px 7px;
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    font-family: inherit;
+    font-size: 12px;
+    background: var(--card);
+    color: var(--ink);
+  }
+  .tm-alias { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-soft); }
+  .tm-alias-label { white-space: nowrap; }
+  .tm-alias-picker { position: relative; flex: 1; max-width: 220px; }
+  .tm-alias-picker input[type="text"] {
+    width: 100%;
+    padding: 5px 7px;
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    font-family: inherit;
+    font-size: 12px;
+    background: var(--card);
+    color: var(--ink);
+  }
   .tag-suggest-item:hover { background: rgba(47, 59, 84, 0.08); }
 
   .copy-btn { border: none; background: transparent; color: var(--ink-soft); cursor: pointer; font-size: 12px; padding: 2px 4px; }
@@ -379,6 +414,7 @@
   <div class="header-right">
     <div id="auth-area" class="auth-area"></div>
     <div id="od-auth-area" class="auth-area"></div>
+    <button type="button" class="ghost small" id="btn-open-tag-manager">タグ管理</button>
   </div>
 </header>
 
@@ -398,11 +434,11 @@
         <label><input type="checkbox" value="anime" /> アニメ</label>
         <label><input type="checkbox" value="video" /> ビデオ</label>
         <label><input type="checkbox" value="magazine" /> 雑誌</label>
-        <label><input type="checkbox" value="movie" /> 映画</label>
+        <label><input type="checkbox" value="movie" /> 動画</label>
       </div>
     </div>
     <div class="field">
-      <label>所有状況(ビデオ)</label>
+      <label>所有状況(ビデオ/アニメ)</label>
       <select id="f-owned">
         <option value="">すべて</option>
         <option value="true">所有している</option>
@@ -425,11 +461,17 @@
     <div class="checkrow"><input type="checkbox" id="f-deleted" /> <label for="f-deleted">削除済みも表示</label></div>
     <div class="field">
       <label>並び替え</label>
-      <select id="f-sort">
-        <option value="updated_at">更新日</option>
-        <option value="production_date">制作日</option>
-        <option value="usage_count">使用回数</option>
-      </select>
+      <div style="display:flex; gap:6px;">
+        <select id="f-sort" style="flex:1;">
+          <option value="updated_at">更新日</option>
+          <option value="production_date">制作日</option>
+          <option value="usage_count">使用回数</option>
+        </select>
+        <select id="f-sort-dir" style="flex: 0 0 72px;">
+          <option value="desc">降順</option>
+          <option value="asc">昇順</option>
+        </select>
+      </div>
     </div>
     <button id="btn-search" style="width:100%;">検索する</button>
     <button id="btn-clear" class="ghost" style="width:100%; margin-top:8px;">クリア</button>
@@ -464,7 +506,7 @@
           <option value="anime">アニメ</option>
           <option value="video">ビデオ</option>
           <option value="magazine">雑誌</option>
-          <option value="movie">映画</option>
+          <option value="movie">動画</option>
         </select>
       </div>
       <div class="field">
@@ -570,7 +612,7 @@
           <option value="anime">アニメ</option>
           <option value="video">ビデオ</option>
           <option value="magazine">雑誌</option>
-          <option value="movie">映画</option>
+          <option value="movie">動画</option>
         </select>
       </div>
       <div class="field">
@@ -652,17 +694,46 @@
   </div>
 </dialog>
 
+<dialog id="dlg-tag-manager">
+  <div class="dialog-inner">
+    <h2>タグ管理</h2>
+    <div class="field">
+      <label>タグの種類</label>
+      <select id="tm-namespace">
+        <option value="content">内容タグ</option>
+        <option value="person">人物タグ</option>
+        <option value="creator">作者タグ</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>タグ名で絞り込み</label>
+      <input type="text" id="tm-query" autocomplete="off" placeholder="部分一致" />
+    </div>
+    <div class="checkrow">
+      <input type="checkbox" id="tm-only-missing" checked />
+      <label for="tm-only-missing">よみがな未設定のみ表示</label>
+    </div>
+    <p class="mono" style="font-size:11px;color:var(--ink-soft);">最大200件まで表示します。多い場合はタグ名で絞り込んでください。</p>
+    <div id="tm-list" style="max-height:360px;overflow-y:auto;border:1px solid var(--rule);border-radius:2px;"></div>
+    <div id="tm-alias-suggest" class="tag-suggest-list" style="display:none; position:fixed; z-index:100;"></div>
+    <div class="dialog-actions">
+      <button type="button" class="ghost" id="btn-tag-manager-close">閉じる</button>
+    </div>
+  </div>
+</dialog>
+
 <script type="module">
   import {
     createPost, searchPosts, softDeletePost, restorePost, incrementUsageCount, decrementUsageCount, listImages,
     updatePost, replaceTags, addImages, setCoverImage, deleteImage, reorderImages, getPost, searchTags,
+    listAllTags, updateTagYomigana, setTagAlias, getTagById,
     signInWithMagicLink, signOut, getCurrentSession, onAuthStateChange,
   } from './api.js';
   import {
     getOneDriveAccount, signInOneDrive, getMyDriveId, listFolder, getThumbnailUrl, getDownloadUrl,
   } from './onedrive.js';
 
-  const CATEGORY_NAME  = { photo: '写真', illustration: 'イラスト', comic: '漫画', anime: 'アニメ', video: 'ビデオ', magazine: '雑誌', movie: '映画' };
+  const CATEGORY_NAME  = { photo: '写真', illustration: 'イラスト', comic: '漫画', anime: 'アニメ', video: 'ビデオ', magazine: '雑誌', movie: '動画' };
 
   const resultsEl = document.getElementById('results');
   const countEl = document.getElementById('result-count');
@@ -734,11 +805,11 @@
         const filtered = results.filter((r) => !tags.includes(r.name));
         if (filtered.length === 0) { hideSuggest(); return; }
         suggestEl.innerHTML = filtered
-          .map((r) => `<div class="tag-suggest-item">${r.name}</div>`)
+          .map((r) => `<div class="tag-suggest-item" data-name="${r.name}">${r.name}${r.yomigana ? ` <span class="tag-suggest-yomi">(${r.yomigana})</span>` : ''}</div>`)
           .join('');
         suggestEl.style.display = '';
         suggestEl.querySelectorAll('.tag-suggest-item').forEach((el) => {
-          el.onmousedown = (e) => { e.preventDefault(); addTag(el.textContent); };
+          el.onmousedown = (e) => { e.preventDefault(); addTag(el.dataset.name); };
         });
       }, 200);
     });
@@ -919,9 +990,31 @@
       personTags: fPersonTags.getTags(),
       creatorTags: fCreatorTags.getTags(),
       sortBy: document.getElementById('f-sort').value,
+      sortAsc: document.getElementById('f-sort-dir').value === 'asc',
     };
     currentOffset = 0;
     await loadPage(false);
+  }
+
+  // 編集・削除・使用回数の変更後に使う。「もっと読み込む」で増やした分を1ページ目に戻さず、
+  // 今読み込んでいる件数のぶんだけ中身を取り直す。
+  async function refreshLoadedPages() {
+    if (!currentFilters) return;
+    const reloadCount = Math.max(resultsEl.children.length, PAGE_SIZE);
+    const posts = await searchPosts({
+      ...currentFilters,
+      limit: reloadCount,
+      offset: 0,
+    });
+    resultsEl.innerHTML = '';
+    posts.forEach((p) => {
+      const card = renderCard(p);
+      resultsEl.appendChild(card);
+      attachCoverThumbnail(card, p);
+    });
+    currentOffset = posts.length;
+    countEl.textContent = `${posts.length}件読み込み済み`;
+    loadMoreBtn.style.display = posts.length === reloadCount ? '' : 'none';
   }
 
   document.getElementById('btn-search').onclick = runSearch;
@@ -938,6 +1031,7 @@
     document.getElementById('f-liked').checked = false;
     document.getElementById('f-deleted').checked = false;
     document.getElementById('f-sort').value = 'updated_at';
+    document.getElementById('f-sort-dir').value = 'desc';
     fContentTags.setTags([]);
     fPersonTags.setTags([]);
     fCreatorTags.setTags([]);
@@ -970,9 +1064,11 @@
     dlg.showModal();
   };
 
+  const OWNERSHIP_CATEGORIES = ['video', 'anime'];
+
   function toggleOwnedWrap(categorySelectId, wrapId) {
     const wrap = document.getElementById(wrapId);
-    wrap.style.display = document.getElementById(categorySelectId).value === 'video' ? '' : 'none';
+    wrap.style.display = OWNERSHIP_CATEGORIES.includes(document.getElementById(categorySelectId).value) ? '' : 'none';
   }
   document.getElementById('n-category').onchange = () => toggleOwnedWrap('n-category', 'n-owned-wrap');
   toggleOwnedWrap('n-category', 'n-owned-wrap');
@@ -1023,7 +1119,7 @@
       title: document.getElementById('n-title').value.trim(),
       category: document.getElementById('n-category').value,
       isLiked: document.getElementById('n-liked').checked,
-      isOwned: document.getElementById('n-category').value === 'video'
+      isOwned: OWNERSHIP_CATEGORIES.includes(document.getElementById('n-category').value)
         ? document.getElementById('n-owned').checked : null,
       productionDate: document.getElementById('n-date').value || null,
       productionDatePrecision: document.getElementById('n-date-precision').value,
@@ -1287,7 +1383,7 @@
       `;
       row.querySelector('input[type="radio"]').onchange = async () => {
         await setCoverImage(editPostId, img.id);
-        runSearch();
+        refreshLoadedPages();
       };
       row.querySelector('[data-action="up"]').onclick = async () => {
         if (idx === 0) return;
@@ -1308,7 +1404,7 @@
         if (!ok) return;
         await deleteImage(img.id);
         await refreshEditImages();
-        runSearch();
+        refreshLoadedPages();
       };
       container.appendChild(row);
 
@@ -1333,7 +1429,7 @@
       selections.map((sel, i) => ({ driveId: sel.driveId, itemId: sel.itemId, sortOrder: base + i }))
     );
     await refreshEditImages();
-    runSearch();
+    refreshLoadedPages();
   });
 
   document.getElementById('btn-e-add-image').onclick = async () => {
@@ -1343,7 +1439,7 @@
     if (!itemId) return;
     await addImages(editPostId, [{ driveId: driveId.trim(), itemId: itemId.trim(), sortOrder: editImages.length }]);
     await refreshEditImages();
-    runSearch();
+    refreshLoadedPages();
   };
 
   document.getElementById('btn-edit-save').onclick = async () => {
@@ -1351,7 +1447,7 @@
       title: document.getElementById('e-title').value.trim(),
       category: document.getElementById('e-category').value,
       isLiked: document.getElementById('e-liked').checked,
-      isOwned: document.getElementById('e-category').value === 'video'
+      isOwned: OWNERSHIP_CATEGORIES.includes(document.getElementById('e-category').value)
         ? document.getElementById('e-owned').checked : null,
       productionDate: document.getElementById('e-date').value || null,
       productionDatePrecision: document.getElementById('e-date-precision').value,
@@ -1364,31 +1460,31 @@
       creator: eCreatorTags.getTags(),
     });
     dlgEdit.close();
-    runSearch();
+    refreshLoadedPages();
   };
   document.getElementById('btn-edit-cancel').onclick = () => dlgEdit.close();
 
   document.getElementById('btn-e-usage-plus').onclick = async () => {
     await incrementUsageCount(editPostId);
     updateUsageDeleteUI(await getPost(editPostId));
-    runSearch();
+    refreshLoadedPages();
   };
   document.getElementById('btn-e-usage-minus').onclick = async () => {
     await decrementUsageCount(editPostId);
     updateUsageDeleteUI(await getPost(editPostId));
-    runSearch();
+    refreshLoadedPages();
   };
   document.getElementById('btn-e-delete').onclick = async () => {
     const ok = await confirmAction('この投稿を削除しますか？(あとで復元できます)');
     if (!ok) return;
     await softDeletePost(editPostId);
     dlgEdit.close();
-    runSearch();
+    refreshLoadedPages();
   };
   document.getElementById('btn-e-restore').onclick = async () => {
     await restorePost(editPostId);
     dlgEdit.close();
-    runSearch();
+    refreshLoadedPages();
   };
 
   // ---- 画像ビューアー ----
@@ -1538,6 +1634,165 @@
     if (!dlgViewer.open) return;
     if (e.key === 'ArrowLeft') viewerPrevBtn.click();
     if (e.key === 'ArrowRight') viewerNextBtn.click();
+  });
+
+  // ---- タグ管理ダイアログ ----
+  const dlgTagManager = document.getElementById('dlg-tag-manager');
+  const tmList = document.getElementById('tm-list');
+  const tmNamespace = document.getElementById('tm-namespace');
+  const tmQuery = document.getElementById('tm-query');
+  const tmOnlyMissing = document.getElementById('tm-only-missing');
+  const tmAliasSuggest = document.getElementById('tm-alias-suggest');
+
+  // #tm-listはスクロールする箱なので、その中にposition:absoluteで候補を出すと
+  // スクロール領域の外にはみ出た部分が切り取られてしまう。
+  // なので候補欄を1つだけ#tm-listの外に用意し、入力中の欄の真下にposition:fixedで動かして使う。
+  function positionTmAliasSuggest(inputEl) {
+    const rect = inputEl.getBoundingClientRect();
+    tmAliasSuggest.style.top = `${rect.bottom}px`;
+    tmAliasSuggest.style.left = `${rect.left}px`;
+    tmAliasSuggest.style.width = `${rect.width}px`;
+  }
+  function hideTmAliasSuggest() {
+    tmAliasSuggest.style.display = 'none';
+    tmAliasSuggest.innerHTML = '';
+  }
+
+  async function refreshTagManagerList() {
+    hideTmAliasSuggest();
+    tmList.innerHTML = '<div style="padding:10px;color:var(--ink-soft);font-size:12px;">読み込み中…</div>';
+    const tags = await listAllTags(tmNamespace.value, {
+      onlyMissingYomigana: tmOnlyMissing.checked,
+      query: tmQuery.value.trim(),
+    });
+    tmList.innerHTML = '';
+    if (tags.length === 0) {
+      tmList.innerHTML = '<div style="padding:10px;color:var(--ink-soft);font-size:12px;">該当するタグがありません</div>';
+      return;
+    }
+    tags.forEach((tag) => {
+      const row = document.createElement('div');
+      row.className = 'tm-row';
+      row.innerHTML = `
+        <div class="tm-row-main">
+          <span class="tm-name">${tag.name}${tag.alias_of_tag_id ? ' <span class="mono" style="color:var(--ink-soft);font-size:11px;">(別名)</span>' : ''}</span>
+          <input type="text" class="mono tm-yomi" placeholder="よみがな(ひらがな)" value="${tag.yomigana ?? ''}" />
+          <span class="tm-save-state mono" style="font-size:11px;color:var(--ink-soft);width:1.2em;"></span>
+        </div>
+        <div class="tm-alias">
+          <span class="tm-alias-label">同一人物の別タグ:</span>
+          <span class="tm-alias-current mono"></span>
+          <div class="tm-alias-picker">
+            <input type="text" class="mono tm-alias-input" autocomplete="off" placeholder="タグ名で検索して選択" />
+          </div>
+          <button type="button" class="ghost small tm-alias-clear" style="display:none;">解除</button>
+        </div>
+      `;
+
+      // --- よみがな ---
+      const yomiInput = row.querySelector('.tm-yomi');
+      const stateEl = row.querySelector('.tm-save-state');
+      let saveTimer = null;
+      yomiInput.addEventListener('input', () => {
+        clearTimeout(saveTimer);
+        stateEl.textContent = '';
+        saveTimer = setTimeout(async () => {
+          try {
+            await updateTagYomigana(tag.id, yomiInput.value.trim());
+            stateEl.textContent = '✓';
+          } catch {
+            stateEl.textContent = '×';
+          }
+        }, 500);
+      });
+
+      // --- 別名(エイリアス) ---
+      const aliasCurrentEl = row.querySelector('.tm-alias-current');
+      const aliasPickerEl = row.querySelector('.tm-alias-picker');
+      const aliasInput = row.querySelector('.tm-alias-input');
+      const aliasClearBtn = row.querySelector('.tm-alias-clear');
+
+      async function renderAliasState() {
+        if (tag.alias_of_tag_id) {
+          let targetName = '…';
+          try {
+            const target = await getTagById(tag.alias_of_tag_id);
+            targetName = target?.name ?? '(不明)';
+          } catch {
+            targetName = '(取得失敗)';
+          }
+          aliasCurrentEl.textContent = `→ ${targetName}`;
+          aliasPickerEl.style.display = 'none';
+          aliasClearBtn.style.display = '';
+        } else {
+          aliasCurrentEl.textContent = '';
+          aliasPickerEl.style.display = '';
+          aliasClearBtn.style.display = 'none';
+        }
+      }
+      renderAliasState();
+
+      aliasClearBtn.onclick = async () => {
+        await setTagAlias(tag.id, null);
+        tag.alias_of_tag_id = null;
+        renderAliasState();
+      };
+
+      let aliasDebounce = null;
+      aliasInput.addEventListener('input', () => {
+        const query = aliasInput.value.trim();
+        clearTimeout(aliasDebounce);
+        if (!query) { hideTmAliasSuggest(); return; }
+        aliasDebounce = setTimeout(async () => {
+          let results;
+          try {
+            results = await searchTags(tmNamespace.value, query, 8);
+          } catch {
+            return;
+          }
+          // 自分自身と、すでに別名を持つタグ(代表ではないタグ)は選べないようにする
+          const candidates = results.filter((r) => r.id !== tag.id && !r.alias_of_tag_id);
+          if (candidates.length === 0) { hideTmAliasSuggest(); return; }
+
+          positionTmAliasSuggest(aliasInput);
+          tmAliasSuggest.innerHTML = candidates
+            .map((r) => `<div class="tag-suggest-item" data-id="${r.id}">${r.name}</div>`)
+            .join('');
+          tmAliasSuggest.style.display = '';
+          tmAliasSuggest.querySelectorAll('.tag-suggest-item').forEach((el) => {
+            el.onmousedown = async (e) => {
+              e.preventDefault();
+              try {
+                await setTagAlias(tag.id, el.dataset.id);
+                tag.alias_of_tag_id = el.dataset.id;
+                aliasInput.value = '';
+                hideTmAliasSuggest();
+                renderAliasState();
+              } catch (err) {
+                alert('別名の設定に失敗しました: ' + (err.message || err));
+              }
+            };
+          });
+        }, 200);
+      });
+      aliasInput.addEventListener('blur', () => setTimeout(hideTmAliasSuggest, 150));
+
+      tmList.appendChild(row);
+    });
+  }
+
+  document.getElementById('btn-open-tag-manager').onclick = () => {
+    dlgTagManager.showModal();
+    refreshTagManagerList();
+  };
+  document.getElementById('btn-tag-manager-close').onclick = () => dlgTagManager.close();
+  tmNamespace.onchange = refreshTagManagerList;
+  tmOnlyMissing.onchange = refreshTagManagerList;
+
+  let tmQueryTimer = null;
+  tmQuery.addEventListener('input', () => {
+    clearTimeout(tmQueryTimer);
+    tmQueryTimer = setTimeout(refreshTagManagerList, 300);
   });
 </script>
 

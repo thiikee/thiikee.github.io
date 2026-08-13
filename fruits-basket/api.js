@@ -38,6 +38,16 @@ export function onAuthStateChange(callback) {
 // ---------------- タグ ----------------
 
 // 指定した名前空間+名前のタグIDを取得。無ければ作成する。
+// カタカナ/ひらがなのみのタグ名なら、よみがなを自動生成する(漢字が混ざる場合はnull=手動入力待ち)
+function autoYomigana(name) {
+  if (/^[\u3040-\u309F]+$/.test(name)) return name; // 既にひらがなのみ
+  if (/^[\u30A0-\u30FF]+$/.test(name)) {
+    // カタカナ -> ひらがな(長音記号「ー」はそのまま)
+    return name.replace(/[\u30A1-\u30F6]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0x60));
+  }
+  return null;
+}
+
 export async function getOrCreateTag(namespace, name) {
   const trimmed = name.trim();
   if (!trimmed) return null;
@@ -53,20 +63,57 @@ export async function getOrCreateTag(namespace, name) {
 
   const { data: created, error: insertErr } = await supabase
     .from('tags')
-    .insert({ namespace, name: trimmed })
+    .insert({ namespace, name: trimmed, yomigana: autoYomigana(trimmed) })
     .select('id')
     .single();
   if (insertErr) throw insertErr;
   return created.id;
 }
 
-// タグ名の前方一致/部分一致検索(登録フォームのサジェスト用)
+// タグ名またはよみがなの部分一致検索(登録フォーム/検索フォームのサジェスト用)
 export async function searchTags(namespace, query, limit = 20) {
-  let q = supabase.from('tags').select('id, name').eq('namespace', namespace).order('name');
-  if (query) q = q.ilike('name', `%${query}%`);
+  let q = supabase.from('tags').select('id, name, yomigana, alias_of_tag_id').eq('namespace', namespace).order('name');
+  if (query) q = q.or(`name.ilike.%${query}%,yomigana.ilike.%${query}%`);
   const { data, error } = await q.limit(limit);
   if (error) throw error;
   return data;
+}
+
+// タグ管理画面用: 名前空間内のタグを一覧取得(よみがな未設定のみ/名前で絞り込み可)
+export async function listAllTags(namespace, { onlyMissingYomigana = false, query = '' } = {}) {
+  let q = supabase.from('tags').select('id, name, yomigana, alias_of_tag_id').eq('namespace', namespace).order('name');
+  if (onlyMissingYomigana) q = q.is('yomigana', null);
+  if (query) q = q.ilike('name', `%${query}%`);
+  const { data, error } = await q.limit(200);
+  if (error) throw error;
+  return data;
+}
+
+export async function updateTagYomigana(tagId, yomigana) {
+  const { error } = await supabase
+    .from('tags')
+    .update({ yomigana: yomigana ? yomigana.trim() : null })
+    .eq('id', tagId);
+  if (error) throw error;
+}
+
+export async function getTagById(tagId) {
+  const { data, error } = await supabase
+    .from('tags')
+    .select('id, name, yomigana, alias_of_tag_id')
+    .eq('id', tagId)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+// tagIdを、aliasOfTagId(同じ名前空間の代表タグ)の別名として設定する。nullを渡すと解除。
+export async function setTagAlias(tagId, aliasOfTagId) {
+  const { error } = await supabase
+    .from('tags')
+    .update({ alias_of_tag_id: aliasOfTagId })
+    .eq('id', tagId);
+  if (error) throw error;
 }
 
 async function attachTags(postId, tagsByNamespace) {

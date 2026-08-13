@@ -108,11 +108,22 @@ export async function listFolder(folderId = null) {
   });
 }
 
+// サムネイルURLのキャッシュ。同じ画像を何度も一覧に出す時にGraph APIを叩き直さないため。
+const thumbnailCache = new Map(); // key: "driveId:itemId:size" -> { url, expiresAt }
+const THUMBNAIL_CACHE_TTL_MS = 30 * 60 * 1000; // 30分
+
 // サムネイルURLを取得(small/medium/large)。取得できない場合はnull。
 export async function getThumbnailUrl(driveId, itemId, size = 'medium') {
+  const cacheKey = `${driveId}:${itemId}:${size}`;
+  const cached = thumbnailCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.url;
+  }
   try {
     const data = await graphFetch(`/drives/${driveId}/items/${itemId}/thumbnails`);
-    return data.value?.[0]?.[size]?.url ?? null;
+    const url = data.value?.[0]?.[size]?.url ?? null;
+    if (url) thumbnailCache.set(cacheKey, { url, expiresAt: Date.now() + THUMBNAIL_CACHE_TTL_MS });
+    return url;
   } catch {
     return null;
   }
