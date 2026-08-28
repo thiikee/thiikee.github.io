@@ -273,6 +273,13 @@
 
   .card-body { padding: 12px; }
   .card-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+  .like-heart { color: #C0392B; }
+
+  @keyframes flash-update-anim {
+    0% { color: var(--brick); transform: scale(1.25); }
+    100% { color: var(--ink); transform: scale(1); }
+  }
+  .flash-update { display: inline-block; animation: flash-update-anim 0.6s ease-out; }
   .card-meta { font-size: 11px; color: var(--ink-soft); margin-bottom: 8px; }
   .tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
   .tag {
@@ -511,7 +518,7 @@
       </div>
       <div class="field">
         <label>制作日(わかる範囲で)</label>
-        <input type="date" id="n-date" />
+        <input type="text" id="n-date" placeholder="yyyy/mm/dd" autocomplete="off" />
       </div>
     </div>
     <div class="field">
@@ -617,7 +624,7 @@
       </div>
       <div class="field">
         <label>制作日(わかる範囲で)</label>
-        <input type="date" id="e-date" />
+        <input type="text" id="e-date" placeholder="yyyy/mm/dd" autocomplete="off" />
       </div>
     </div>
     <div class="field">
@@ -666,11 +673,17 @@
     </div>
 
     <div class="field" style="border-top:1px solid var(--rule); padding-top:14px;">
-      <label>使用回数・削除</label>
-      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-        <span class="mono" id="e-usage-count" style="font-size:13px;">使用0回</span>
-        <button type="button" class="ghost small" id="btn-e-usage-minus">使用－1</button>
-        <button type="button" class="ghost small" id="btn-e-usage-plus">使用＋1</button>
+      <label>使用回数</label>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <button type="button" class="ghost small" id="btn-e-usage-minus">－1</button>
+        <span class="mono" id="e-usage-count" style="font-size:20px; font-weight:700;">0回</span>
+        <button type="button" class="ghost small" id="btn-e-usage-plus">＋1</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>削除</label>
+      <div style="display:flex; align-items:center; gap:10px;">
         <button type="button" class="danger small" id="btn-e-delete">論理削除</button>
         <button type="button" class="ghost small" id="btn-e-restore" style="display:none;">復元</button>
       </div>
@@ -686,7 +699,7 @@
 <dialog id="dlg-confirm">
   <div class="dialog-inner">
     <h2 id="confirm-title">確認</h2>
-    <p id="confirm-message" style="font-size:13px;color:var(--ink-soft);margin:0;"></p>
+    <p id="confirm-message" style="font-size:13px;color:var(--ink-soft);margin:0;white-space:pre-wrap;"></p>
     <div class="dialog-actions">
       <button type="button" class="ghost" id="btn-confirm-cancel">キャンセル</button>
       <button type="button" class="danger" id="btn-confirm-ok">実行する</button>
@@ -746,6 +759,26 @@
   function stripExtension(filename) {
     const idx = filename.lastIndexOf('.');
     return idx > 0 ? filename.slice(0, idx) : filename;
+  }
+
+  // "yyyy/mm/dd" -> ISO日付("yyyy-mm-dd")。空欄はvalue:nullでok。不正な形式はok:falseを返す。
+  function parseYmdSlash(str) {
+    const trimmed = str.trim();
+    if (!trimmed) return { ok: true, value: null };
+    const m = trimmed.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
+    if (!m) return { ok: false };
+    const [, y, mo, d] = m;
+    const mm = mo.padStart(2, '0');
+    const dd = d.padStart(2, '0');
+    const date = new Date(`${y}-${mm}-${dd}T00:00:00Z`);
+    if (Number.isNaN(date.getTime()) || date.getUTCDate() !== Number(dd)) return { ok: false };
+    return { ok: true, value: `${y}-${mm}-${dd}` };
+  }
+
+  // ISO日付("yyyy-mm-dd")を "yyyy/mm/dd" 表示に変換。空ならから文字列。
+  function toYmdSlash(isoDate) {
+    if (!isoDate) return '';
+    return isoDate.slice(0, 10).replace(/-/g, '/');
   }
 
   // タグのチップ入力(namespace内の既存タグを候補に出す。重複追加は自動で無視)。
@@ -882,7 +915,7 @@
       <div class="cover">${post.cover_image_id ? '画像を読み込み中…' : '画像未選択'}</div>
       ${post.image_count > 1 ? `<div class="image-count-badge">${post.image_count}枚</div>` : ''}
       <div class="card-body">
-        <div class="card-title">${post.is_liked ? '♥ ' : ''}${post.title}</div>
+        <div class="card-title">${post.is_liked ? '<span class="like-heart">♥</span> ' : ''}${post.title}</div>
         <div class="card-meta mono">
           ${CATEGORY_NAME[post.category]} ・
           ${fmtDate(post.production_date, post.production_date_precision)} ・
@@ -1115,13 +1148,19 @@
       }))
       .filter((img) => img.driveId && img.itemId);
 
+    const dateResult = parseYmdSlash(document.getElementById('n-date').value);
+    if (!dateResult.ok) {
+      alert('制作日は yyyy/mm/dd の形式で入力してください(空欄でも構いません)');
+      return;
+    }
+
     await createPost({
       title: document.getElementById('n-title').value.trim(),
       category: document.getElementById('n-category').value,
       isLiked: document.getElementById('n-liked').checked,
       isOwned: OWNERSHIP_CATEGORIES.includes(document.getElementById('n-category').value)
         ? document.getElementById('n-owned').checked : null,
-      productionDate: document.getElementById('n-date').value || null,
+      productionDate: dateResult.value,
       productionDatePrecision: document.getElementById('n-date-precision').value,
       comment: document.getElementById('n-comment').value.trim() || null,
       sourceUrl: document.getElementById('n-source-url').value.trim() || null,
@@ -1336,8 +1375,15 @@
   let editImages = [];
   document.getElementById('e-category').onchange = () => toggleOwnedWrap('e-category', 'e-owned-wrap');
 
-  function updateUsageDeleteUI(post) {
-    document.getElementById('e-usage-count').textContent = `使用${post.usage_count}回`;
+  function updateUsageDeleteUI(post, { flash = false } = {}) {
+    const countEl = document.getElementById('e-usage-count');
+    countEl.textContent = `${post.usage_count}回`;
+    if (flash) {
+      countEl.classList.remove('flash-update');
+      // 一度クラスを外してから付け直すことで、連続クリックでもアニメーションを再生させる
+      void countEl.offsetWidth;
+      countEl.classList.add('flash-update');
+    }
     document.getElementById('btn-e-delete').style.display = post.deleted_at ? 'none' : '';
     document.getElementById('btn-e-restore').style.display = post.deleted_at ? '' : 'none';
   }
@@ -1349,7 +1395,7 @@
     document.getElementById('e-liked').checked = post.is_liked;
     document.getElementById('e-owned').checked = post.is_owned === true;
     toggleOwnedWrap('e-category', 'e-owned-wrap');
-    document.getElementById('e-date').value = post.production_date ?? '';
+    document.getElementById('e-date').value = toYmdSlash(post.production_date);
     document.getElementById('e-date-precision').value = post.production_date_precision;
     document.getElementById('e-comment').value = post.comment ?? '';
     document.getElementById('e-source-url').value = post.source_url ?? '';
@@ -1442,14 +1488,21 @@
     refreshLoadedPages();
   };
 
-  document.getElementById('btn-edit-save').onclick = async () => {
+  // フォームの入力内容(タイトル/カテゴリ/タグ/コメント/引用元URLなど)を保存する。
+  // 成功時true、日付の形式が不正で保存できなかった場合はfalseを返す。
+  async function saveEditFormFields() {
+    const dateResult = parseYmdSlash(document.getElementById('e-date').value);
+    if (!dateResult.ok) {
+      alert('制作日は yyyy/mm/dd の形式で入力してください(空欄でも構いません)');
+      return false;
+    }
     await updatePost(editPostId, {
       title: document.getElementById('e-title').value.trim(),
       category: document.getElementById('e-category').value,
       isLiked: document.getElementById('e-liked').checked,
       isOwned: OWNERSHIP_CATEGORIES.includes(document.getElementById('e-category').value)
         ? document.getElementById('e-owned').checked : null,
-      productionDate: document.getElementById('e-date').value || null,
+      productionDate: dateResult.value,
       productionDatePrecision: document.getElementById('e-date-precision').value,
       comment: document.getElementById('e-comment').value.trim() || null,
       sourceUrl: document.getElementById('e-source-url').value.trim() || null,
@@ -1459,6 +1512,12 @@
       person: ePersonTags.getTags(),
       creator: eCreatorTags.getTags(),
     });
+    return true;
+  }
+
+  document.getElementById('btn-edit-save').onclick = async () => {
+    const saved = await saveEditFormFields();
+    if (!saved) return;
     dlgEdit.close();
     refreshLoadedPages();
   };
@@ -1466,17 +1525,19 @@
 
   document.getElementById('btn-e-usage-plus').onclick = async () => {
     await incrementUsageCount(editPostId);
-    updateUsageDeleteUI(await getPost(editPostId));
+    updateUsageDeleteUI(await getPost(editPostId), { flash: true });
     refreshLoadedPages();
   };
   document.getElementById('btn-e-usage-minus').onclick = async () => {
     await decrementUsageCount(editPostId);
-    updateUsageDeleteUI(await getPost(editPostId));
+    updateUsageDeleteUI(await getPost(editPostId), { flash: true });
     refreshLoadedPages();
   };
   document.getElementById('btn-e-delete').onclick = async () => {
-    const ok = await confirmAction('この投稿を削除しますか？(あとで復元できます)');
+    const ok = await confirmAction('この投稿を削除しますか？(あとで復元できます)\n入力中のタイトル/タグ/コメントなども一緒に保存されます。');
     if (!ok) return;
+    const saved = await saveEditFormFields();
+    if (!saved) return;
     await softDeletePost(editPostId);
     dlgEdit.close();
     refreshLoadedPages();

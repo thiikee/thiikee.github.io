@@ -167,7 +167,7 @@ async function fetchAndReplaceMediaTargets(targets, accessToken) {
     try {
       const res = await fetch(
         `https://graph.microsoft.com/v1.0/me/drive/root:/${encodeURI(path)}:/content`,
-        { headers: { Authorization: `Bearer ${accessToken}` } }
+        { headers: { Authorization: `Bearer ${accessToken}` }, cache: 'no-store' }
       );
       if (!res.ok) throw new Error(`取得失敗 (${res.status})`);
 
@@ -253,10 +253,15 @@ async function decryptAndShowMedia(button) {
 
     const res = await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${onedriveItemId}/content`, {
       headers: { Authorization: `Bearer ${accessToken}` },
+      cache: 'no-store', // ブラウザキャッシュ経由の中途半端なレスポンス(範囲リクエスト等)を避ける
     });
     if (!res.ok) throw new Error(`OneDriveダウンロード失敗 (${res.status})`);
+    if (res.status === 206) throw new Error('部分的なレスポンス(206)を受け取りました。キャッシュの影響の可能性があります。');
 
     const encryptedBuffer = await res.arrayBuffer();
+    if (encryptedBuffer.byteLength < 28) {
+      throw new Error(`取得したデータが小さすぎます(${encryptedBuffer.byteLength}バイト)。ダウンロードが壊れている可能性があります。`);
+    }
     const blob = await decryptToBlob(encryptedBuffer, password, mime);
     const dataUrl = await blobToDataUrl(blob);
 
