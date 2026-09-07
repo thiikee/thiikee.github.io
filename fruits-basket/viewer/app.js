@@ -91,6 +91,11 @@ function accountHandle(accountId) {
   return a ? `@${a.handle}` : '';
 }
 
+function accountRawHandle(accountId) {
+  const a = accountsCache.find((x) => x.id === accountId);
+  return a ? a.handle : null;
+}
+
 function formatDate(iso) {
   if (!iso) return '';
   const d = new Date(iso);
@@ -113,6 +118,9 @@ function renderTweetCard(item) {
     retweet: { label: 'RT', cls: 'badge-retweet' },
   }[item.kind] || { label: 'TWEET', cls: 'badge-tweet' };
 
+  const rawHandle = accountRawHandle(item.account_id);
+  const tweetUrl = rawHandle ? `https://x.com/${rawHandle}/status/${item.id}` : null;
+
   return `
     <article class="card card-tweet">
       <div class="card-meta">
@@ -122,7 +130,10 @@ function renderTweetCard(item) {
       </div>
       <p class="card-text">${escapeHtml(item.text || '')}</p>
       ${mediaHtml ? `<div class="media-grid">${mediaHtml}</div>` : ''}
-      <div class="card-stats">♡ ${item.favorite_count ?? 0} · ⟲ ${item.retweet_count ?? 0}</div>
+      <div class="card-stats">
+        <span>♡ ${item.favorite_count ?? 0} · ⟲ ${item.retweet_count ?? 0}</span>
+        ${tweetUrl ? `<a href="${tweetUrl}" target="_blank" rel="noopener noreferrer" class="external-link">Xで見る ↗</a>` : ''}
+      </div>
     </article>`;
 }
 
@@ -492,6 +503,22 @@ async function boot() {
   await initFilterPanel();
   await runSearch();
 }
+
+// ============================================
+// パスワードリセット(メールのリンクから戻ってきた時の処理)
+// ============================================
+supabase.auth.onAuthStateChange(async (event) => {
+  if (event === 'PASSWORD_RECOVERY') {
+    const newPassword = prompt('新しいパスワードを入力してください');
+    if (!newPassword) return;
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) {
+      alert('パスワードの更新に失敗しました: ' + error.message);
+    } else {
+      alert('パスワードを更新しました。');
+    }
+  }
+});
 
 document.addEventListener('DOMContentLoaded', () => {
   el('login-form').addEventListener('submit', handleLogin);
