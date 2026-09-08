@@ -1181,10 +1181,13 @@
   const authArea = document.getElementById('auth-area');
   const layoutEl = document.getElementById('layout');
 
+  const tagManagerBtn = document.getElementById('btn-open-tag-manager');
+
   function renderAuthArea(session) {
     authArea.innerHTML = '';
     if (session?.user) {
       layoutEl.style.display = '';
+      tagManagerBtn.style.display = '';
       const label = document.createElement('span');
       label.className = 'mono';
       label.style.color = 'var(--ink-soft)';
@@ -1196,6 +1199,7 @@
       authArea.append(label, btn);
     } else {
       layoutEl.style.display = 'none';
+      tagManagerBtn.style.display = 'none';
       const input = document.createElement('input');
       input.type = 'email';
       input.placeholder = 'メールアドレス';
