@@ -884,6 +884,16 @@
     return d;
   }
 
+  // 使用回数を絵文字の個数で表す(0回は今まで通りテキスト、多すぎる場合は+Nで省略)
+  const USAGE_EMOJI = '💦';
+  const USAGE_EMOJI_MAX = 8;
+  function fmtUsage(count) {
+    if (!count) return '使用0回';
+    const shown = Math.min(count, USAGE_EMOJI_MAX);
+    const extra = count - shown;
+    return USAGE_EMOJI.repeat(shown) + (extra > 0 ? `+${extra}` : '');
+  }
+
   // ---- 確認モーダル ----
   const dlgConfirm = document.getElementById('dlg-confirm');
   const confirmMessageEl = document.getElementById('confirm-message');
@@ -919,7 +929,7 @@
         <div class="card-meta mono">
           ${CATEGORY_NAME[post.category]} ・
           ${fmtDate(post.production_date, post.production_date_precision)} ・
-          使用${post.usage_count}回
+          <span title="使用${post.usage_count}回">${fmtUsage(post.usage_count)}</span>
           ${post.is_owned === true ? ' ・ 所有' : post.is_owned === false ? ' ・ 未所有' : ''}
           ${post.deleted_at ? ' ・ 削除済み' : ''}
         </div>
